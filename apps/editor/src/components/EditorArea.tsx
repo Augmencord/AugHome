@@ -3,6 +3,7 @@ import Editor, { OnMount } from '@monaco-editor/react';
 import { useIDE } from '../context/IDEContext';
 import { InlineCompletionManager } from '../services/inlineCompletion';
 import { LSPService } from '../services/lspService';
+import { WelcomeScreen } from './WelcomeScreen';
 
 export const EditorArea: React.FC = () => {
   const { state, dispatch } = useIDE();
@@ -267,24 +268,7 @@ export const EditorArea: React.FC = () => {
             }
           />
         ) : (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: '#858585',
-              fontSize: '13px',
-              gap: '12px',
-            }}
-          >
-            <div style={{ fontSize: '28px' }}>⚡ AugHome IDE</div>
-            <div>Select a file from the explorer sidebar or prompt Augagent to start editing.</div>
-            <div style={{ fontSize: '11px', color: '#555555' }}>
-              Press <code style={{ backgroundColor: '#2d2d2d', padding: '2px 6px', borderRadius: '3px' }}>Ctrl + P</code> to quick open
-            </div>
-          </div>
+          <WelcomeScreen />
         )}
       </div>
     </div>

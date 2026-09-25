@@ -151,6 +151,17 @@ How can I help you today?
     unstaged: ['apps/editor/src/App.tsx'],
     untracked: ['apps/editor/src/components/EditorArea.tsx'],
   },
+  isCommandPaletteOpen: false,
+  isSettingsOpen: false,
+  theme: 'vs-dark',
+  settings: {
+    'editor.theme': 'aughome-dark',
+    'editor.fontSize': 13,
+    'editor.tabSize': 2,
+    'editor.minimap': true,
+    'editor.inlineSuggest': true,
+    'ai.selectedModel': 'gemini-2.5-flash',
+  },
 };
 
 function ideReducer(state: IDEState, action: IDEAction): IDEState {
@@ -271,6 +282,24 @@ function ideReducer(state: IDEState, action: IDEAction): IDEState {
         ),
       };
     }
+
+    case 'TOGGLE_COMMAND_PALETTE':
+      return { ...state, isCommandPaletteOpen: !state.isCommandPaletteOpen };
+
+    case 'SET_COMMAND_PALETTE':
+      return { ...state, isCommandPaletteOpen: action.payload };
+
+    case 'TOGGLE_SETTINGS':
+      return { ...state, isSettingsOpen: !state.isSettingsOpen };
+
+    case 'SET_SETTINGS_OPEN':
+      return { ...state, isSettingsOpen: action.payload };
+
+    case 'SET_THEME':
+      return { ...state, theme: action.payload };
+
+    case 'UPDATE_SETTINGS':
+      return { ...state, settings: { ...state.settings, ...action.payload } };
 
     default:
       return state;

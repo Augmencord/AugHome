@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { IDEProvider, useIDE } from './context/IDEContext';
 import { ActivityBar } from './components/ActivityBar';
 import { Sidebar } from './components/Sidebar';
@@ -6,10 +6,52 @@ import { EditorArea } from './components/EditorArea';
 import { ChatPanel } from './components/ChatPanel';
 import { TerminalPanel } from './components/TerminalPanel';
 import { StatusBar } from './components/StatusBar';
+import { CommandPalette } from './components/CommandPalette';
+import { SettingsModal } from './components/SettingsModal';
 
 const MainLayout: React.FC = () => {
   const { state, dispatch } = useIDE();
   const activeFile = state.openFiles.find((f) => f.id === state.activeFileId);
+
+  // Global VS Code-compatible keybindings listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+
+      // Ctrl+Shift+P or F1: Command Palette
+      if ((isCmdOrCtrl && e.shiftKey && e.key.toLowerCase() === 'p') || e.key === 'F1') {
+        e.preventDefault();
+        dispatch({ type: 'TOGGLE_COMMAND_PALETTE' });
+      }
+      // Ctrl+,: Open Settings
+      else if (isCmdOrCtrl && e.key === ',') {
+        e.preventDefault();
+        dispatch({ type: 'TOGGLE_SETTINGS' });
+      }
+      // Ctrl+B: Toggle Sidebar
+      else if (isCmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        dispatch({ type: 'TOGGLE_SIDEBAR' });
+      }
+      // Ctrl+J: Toggle Terminal
+      else if (isCmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        dispatch({ type: 'TOGGLE_TERMINAL' });
+      }
+      // Ctrl+L: Toggle AI Chat
+      else if (isCmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        dispatch({ type: 'TOGGLE_CHAT' });
+      }
+      // Ctrl+S: Prevent default browser save dialog
+      else if (isCmdOrCtrl && !e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [dispatch]);
 
   // Resize handler for Sidebar (Horizontal)
   const handleSidebarResize = useCallback(
@@ -237,6 +279,10 @@ const MainLayout: React.FC = () => {
 
       {/* Status Bar (22px fixed) */}
       <StatusBar />
+
+      {/* Global Modals and Overlays */}
+      <CommandPalette />
+      <SettingsModal />
     </div>
   );
 };

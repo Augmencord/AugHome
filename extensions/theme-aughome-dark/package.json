@@ -1,0 +1,14 @@
+{
+  "name": "@aughome/extension-theme-aughome-dark",
+  "version": "0.1.0",
+  "description": "Signature sleek dark aesthetic for AugHome IDE with high-contrast syntax highlighting",
+  "main": "index.js",
+  "keywords": [
+    "theme",
+    "dark",
+    "extension",
+    "aughome"
+  ],
+  "author": "Augmencord",
+  "license": "MIT"
+}

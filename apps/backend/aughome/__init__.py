@@ -28,6 +28,14 @@ from aughome.workspace import (
     write_file_content,
 )
 
+from aughome.extensions import (
+    ExtensionContribution,
+    ExtensionManager,
+    ExtensionManifest,
+    ExtensionRecord,
+)
+from aughome.settings import DEFAULT_SETTINGS, SettingsManager
+
 __all__ = [
     "ModelRouter",
     "ModelTier",
@@ -48,4 +56,10 @@ __all__ = [
     "DiffResult",
     "LSPBridge",
     "LSPDiagnostic",
+    "SettingsManager",
+    "DEFAULT_SETTINGS",
+    "ExtensionManager",
+    "ExtensionManifest",
+    "ExtensionContribution",
+    "ExtensionRecord",
 ]

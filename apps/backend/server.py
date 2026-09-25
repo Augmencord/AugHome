@@ -18,8 +18,10 @@ from aughome.server import (
     app,
     completion_service,
     diff_engine,
+    extension_manager,
     lsp_bridge,
     model_router,
+    settings_manager,
 )
 
 __all__ = [
@@ -28,6 +30,8 @@ __all__ = [
     "completion_service",
     "diff_engine",
     "lsp_bridge",
+    "settings_manager",
+    "extension_manager",
 ]
 
 if __name__ == "__main__":

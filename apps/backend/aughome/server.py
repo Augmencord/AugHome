@@ -72,6 +72,22 @@ except ImportError:
         LSPBridge = None  # type: ignore
         LSPDiagnostic = None  # type: ignore
 
+try:
+    from aughome.settings import SettingsManager
+except ImportError:
+    try:
+        from settings import SettingsManager
+    except ImportError:
+        SettingsManager = None  # type: ignore
+
+try:
+    from aughome.extensions import ExtensionManager
+except ImportError:
+    try:
+        from extensions import ExtensionManager
+    except ImportError:
+        ExtensionManager = None  # type: ignore
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Application & Router Setup
@@ -96,6 +112,8 @@ model_router = ModelRouter()
 completion_service = CompletionService(router=model_router) if CompletionService else None
 diff_engine = DiffEngine() if DiffEngine else None
 lsp_bridge = LSPBridge(auto_detect=True) if LSPBridge else None
+settings_manager = SettingsManager() if SettingsManager else None
+extension_manager = ExtensionManager() if ExtensionManager else None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -205,6 +223,15 @@ class LSPRenameRequest(BaseModel):
     new_name: str
     content: Optional[str] = None
     language_id: Optional[str] = "python"
+
+
+class SettingsUpdateRequest(BaseModel):
+    settings: Dict[str, Any]
+
+
+class ExtensionToggleRequest(BaseModel):
+    extension_id: str
+    enabled: Optional[bool] = None
 
 
 
@@ -853,6 +880,65 @@ def lsp_rename(payload: LSPRenameRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 9. Settings APIs (~/.aughome/settings.json)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.get("/v1/settings")
+def get_settings() -> Dict[str, Any]:
+    """Retrieve user settings merged with defaults."""
+    if not settings_manager:
+        raise HTTPException(status_code=500, detail="Settings manager is not initialized.")
+    return {"settings": settings_manager.load_settings()}
+
+
+@app.post("/v1/settings")
+def update_settings(payload: SettingsUpdateRequest) -> Dict[str, Any]:
+    """Update and persist user settings."""
+    if not settings_manager:
+        raise HTTPException(status_code=500, detail="Settings manager is not initialized.")
+    try:
+        updated = settings_manager.save_settings(payload.settings)
+        return {"status": "success", "settings": updated}
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 10. Extensions APIs (extensions/ and ~/.aughome/extensions/)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.get("/v1/extensions")
+def get_extensions() -> Dict[str, Any]:
+    """Retrieve discovered extensions and their contributed tools, themes, languages, and commands."""
+    if not extension_manager:
+        raise HTTPException(status_code=500, detail="Extension manager is not initialized.")
+    extensions = [ext.to_dict() for ext in extension_manager.get_extensions()]
+    return {
+        "extensions": extensions,
+        "contributions": {
+            "commands": extension_manager.get_contributed_commands(),
+            "themes": extension_manager.get_contributed_themes(),
+            "languages": extension_manager.get_contributed_languages(),
+            "tools": extension_manager.get_contributed_tools(),
+        },
+    }
+
+
+@app.post("/v1/extensions/toggle")
+def toggle_extension(payload: ExtensionToggleRequest) -> Dict[str, Any]:
+    """Enable or disable an extension by ID."""
+    if not extension_manager:
+        raise HTTPException(status_code=500, detail="Extension manager is not initialized.")
+    try:
+        record = extension_manager.toggle_extension(payload.extension_id, payload.enabled)
+        return {"status": "success", "extension": record.to_dict()}
+    except KeyError as ke:
+        raise HTTPException(status_code=404, detail=str(ke))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 

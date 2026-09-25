@@ -1,0 +1,25 @@
+{
+  "id": "git-lens",
+  "name": "GitLens Explorer",
+  "version": "0.1.0",
+  "description": "Git blame annotations, commit history explorer, and branch status visualization",
+  "publisher": "aughome",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitlens.toggleLineBlame",
+        "title": "Git: Toggle Inline Author Blame"
+      },
+      {
+        "command": "gitlens.showWorkingTreeDiff",
+        "title": "Git: Show Working Tree Diff"
+      }
+    ],
+    "tools": [
+      {
+        "name": "git_blame",
+        "description": "Inspect line-by-line commit authorship and timestamps"
+      }
+    ]
+  }
+}

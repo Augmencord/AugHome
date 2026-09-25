@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useIDE } from '../context/IDEContext';
 import { FileItem } from '../types';
 
@@ -13,6 +13,44 @@ export const Sidebar: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [commitMessage, setCommitMessage] = useState('');
+  const [extensionsList, setExtensionsList] = useState<any[]>([
+    { id: 'python-support', name: 'Python Language Support', description: 'Rich language intelligence, linting, syntax diagnostics, and execution support for Python', version: 'v0.1.0', enabled: true },
+    { id: 'theme-aughome-dark', name: 'AugHome Dark Theme', description: 'Signature sleek dark aesthetic for AugHome IDE with high-contrast syntax highlighting', version: 'v0.1.0', enabled: true },
+    { id: 'git-lens', name: 'GitLens Explorer', description: 'Git blame annotations, commit history explorer, and branch status visualization', version: 'v0.1.0', enabled: true },
+  ]);
+
+  useEffect(() => {
+    if (state.activeActivityTab === 'extensions') {
+      fetch('http://127.0.0.1:8000/v1/extensions')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.extensions && data.extensions.length > 0) {
+            setExtensionsList(data.extensions);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [state.activeActivityTab]);
+
+  const toggleExtension = async (extId: string, currentEnabled: boolean) => {
+    try {
+      const res = await fetch('http://127.0.0.1:8000/v1/extensions/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ extension_id: extId, enabled: !currentEnabled }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setExtensionsList((prev) =>
+          prev.map((e) => (e.id === extId ? { ...e, enabled: data.extension.enabled } : e))
+        );
+      }
+    } catch {
+      setExtensionsList((prev) =>
+        prev.map((e) => (e.id === extId ? { ...e, enabled: !currentEnabled } : e))
+      );
+    }
+  };
 
   if (!state.isSidebarOpen) {
     return null;
@@ -339,34 +377,46 @@ export const Sidebar: React.FC = () => {
 
         {/* Extensions View */}
         {state.activeActivityTab === 'extensions' && (
-          <div style={{ padding: '12px' }}>
+          <div style={{ padding: '12px' }} data-testid="extensions-panel">
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#aaaaaa', marginBottom: '8px' }}>
-              INSTALLED EXTENSIONS
+              INSTALLED EXTENSIONS ({extensionsList.length})
             </div>
-            {[
-              { name: 'Augagent AI Copilot', desc: 'Real-time AI pair programmer and diff engine', v: 'v1.0.0', badge: 'Active' },
-              { name: 'Python Language Server', desc: 'IntelliSense, linting, formatting for Python', v: 'v2024.2', badge: 'Active' },
-              { name: 'Monaco Keybindings', desc: 'VS Code default shortcuts & multi-cursor', v: 'v0.48.0', badge: 'Active' },
-              { name: 'Prettier Code Formatter', desc: 'Standardized formatting on save', v: 'v3.2.0', badge: 'Active' },
-            ].map((ext, idx) => (
+            {extensionsList.map((ext, idx) => (
               <div
-                key={idx}
+                key={ext.id || idx}
                 style={{
-                  padding: '8px',
+                  padding: '10px',
                   backgroundColor: '#2a2d2e',
-                  borderRadius: '3px',
+                  borderRadius: '4px',
                   marginBottom: '8px',
                   fontSize: '12px',
+                  border: '1px solid #333333',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontWeight: 600, color: '#f0f6fc' }}>{ext.name}</span>
-                  <span style={{ fontSize: '10px', backgroundColor: '#1f6feb', color: '#ffffff', padding: '1px 5px', borderRadius: '3px' }}>
-                    {ext.badge}
-                  </span>
+                  <button
+                    onClick={() => toggleExtension(ext.id, ext.enabled ?? true)}
+                    style={{
+                      fontSize: '10px',
+                      backgroundColor: ext.enabled ? '#1f6feb' : '#444444',
+                      color: '#ffffff',
+                      padding: '2px 8px',
+                      borderRadius: '3px',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {ext.enabled ? 'Enabled' : 'Disabled'}
+                  </button>
                 </div>
-                <div style={{ color: '#858585', fontSize: '11px', marginTop: '3px' }}>{ext.desc}</div>
-                <div style={{ color: '#6e7681', fontSize: '10px', marginTop: '4px' }}>{ext.v}</div>
+                <div style={{ color: '#858585', fontSize: '11px', marginTop: '4px', lineHeight: 1.4 }}>
+                  {ext.description}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6e7681', fontSize: '10px', marginTop: '6px' }}>
+                  <span>{ext.version || 'v0.1.0'}</span>
+                  <span>{ext.publisher ? `@${ext.publisher}` : 'built-in'}</span>
+                </div>
               </div>
             ))}
           </div>

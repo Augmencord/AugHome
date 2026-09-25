@@ -1,0 +1,14 @@
+{
+  "name": "@aughome/extension-python-support",
+  "version": "0.1.0",
+  "description": "Rich language intelligence, linting, syntax diagnostics, and execution support for Python",
+  "main": "index.js",
+  "keywords": [
+    "python",
+    "extension",
+    "aughome",
+    "lsp"
+  ],
+  "author": "Augmencord",
+  "license": "MIT"
+}

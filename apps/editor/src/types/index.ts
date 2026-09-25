@@ -35,6 +35,28 @@ export interface GitStatusState {
   untracked: string[];
 }
 
+export interface UserSettings {
+  'editor.theme'?: string;
+  'editor.fontSize'?: number;
+  'editor.fontFamily'?: string;
+  'editor.tabSize'?: number;
+  'editor.wordWrap'?: string;
+  'editor.minimap'?: boolean;
+  'editor.inlineSuggest'?: boolean;
+  'ai.selectedModel'?: string;
+  'ai.autoCompleteDebounceMs'?: number;
+  keybindings?: Record<string, string>;
+  [key: string]: any;
+}
+
+export interface CommandItem {
+  id: string;
+  title: string;
+  category?: string;
+  shortcut?: string;
+  handler: () => void;
+}
+
 export interface IDEState {
   activeActivityTab: ActivityTab;
   isSidebarOpen: boolean;
@@ -52,6 +74,10 @@ export interface IDEState {
   activeTerminalTab: TerminalTab;
   cursorPosition: { line: number; column: number };
   gitStatus: GitStatusState;
+  isCommandPaletteOpen: boolean;
+  isSettingsOpen: boolean;
+  theme: string;
+  settings: UserSettings;
 }
 
 export type IDEAction =
@@ -73,4 +99,10 @@ export type IDEAction =
   | { type: 'SET_TERMINAL_TAB'; payload: TerminalTab }
   | { type: 'SET_CURSOR_POSITION'; payload: { line: number; column: number } }
   | { type: 'CLEAR_MESSAGES' }
-  | { type: 'APPLY_CODE_TO_ACTIVE_FILE'; payload: string };
+  | { type: 'APPLY_CODE_TO_ACTIVE_FILE'; payload: string }
+  | { type: 'TOGGLE_COMMAND_PALETTE' }
+  | { type: 'SET_COMMAND_PALETTE'; payload: boolean }
+  | { type: 'TOGGLE_SETTINGS' }
+  | { type: 'SET_SETTINGS_OPEN'; payload: boolean }
+  | { type: 'SET_THEME'; payload: string }
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<UserSettings> };

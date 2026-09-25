@@ -1,0 +1,29 @@
+{
+  "id": "theme-aughome-dark",
+  "name": "AugHome Dark Theme",
+  "version": "0.1.0",
+  "description": "Signature sleek dark aesthetic for AugHome IDE with high-contrast syntax highlighting",
+  "publisher": "aughome",
+  "contributes": {
+    "themes": [
+      {
+        "id": "aughome-dark",
+        "label": "AugHome Dark",
+        "uiTheme": "vs-dark",
+        "colors": {
+          "editor.background": "#1e1e1e",
+          "editor.foreground": "#d4d4d4",
+          "activityBar.background": "#181818",
+          "sideBar.background": "#252526",
+          "statusBar.background": "#007acc"
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "theme.setAugHomeDark",
+        "title": "Preferences: Use AugHome Dark Theme"
+      }
+    ]
+  }
+}
