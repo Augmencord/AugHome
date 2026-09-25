@@ -4,15 +4,31 @@ Exposes REST and WebSocket endpoints for AI completions, diffs, model routing,
 and editor language support.
 """
 
+import os
+import sys
+from dataclasses import asdict
+from pathlib import Path
 from typing import Any, Dict
+
+# Ensure backend directory is present in sys.path for direct invocation and sidecar processes
+BACKEND_DIR = Path(__file__).resolve().parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from model_router import ModelRouter, ModelTier
-from diff_engine import DiffEngine
-from completion import CompletionRequest, CompletionService
-from lsp_bridge import LSPBridge
+try:
+    from model_router import ModelRouter, ModelTier
+    from diff_engine import DiffEngine
+    from completion import CompletionRequest, CompletionService
+    from lsp_bridge import LSPBridge
+except ImportError:
+    from .model_router import ModelRouter, ModelTier
+    from .diff_engine import DiffEngine
+    from .completion import CompletionRequest, CompletionService
+    from .lsp_bridge import LSPBridge
 
 app = FastAPI(
     title="AugHome Backend Service",
@@ -72,10 +88,10 @@ def health_check() -> HealthResponse:
 def list_models() -> Dict[str, Any]:
     """List available model descriptors categorized by tier."""
     return {
-        "tier_1_fast": router.list_models_by_tier(ModelTier.TIER_1_FAST),
-        "tier_2_reasoning": router.list_models_by_tier(ModelTier.TIER_2_REASONING),
-        "tier_3_heavy": router.list_models_by_tier(ModelTier.TIER_3_HEAVY),
-        "tier_4_local": router.list_models_by_tier(ModelTier.TIER_4_LOCAL),
+        "tier_1_fast": [asdict(m) for m in router.list_models_by_tier(ModelTier.TIER_1_FAST)],
+        "tier_2_reasoning": [asdict(m) for m in router.list_models_by_tier(ModelTier.TIER_2_REASONING)],
+        "tier_3_heavy": [asdict(m) for m in router.list_models_by_tier(ModelTier.TIER_3_HEAVY)],
+        "tier_4_local": [asdict(m) for m in router.list_models_by_tier(ModelTier.TIER_4_LOCAL)],
     }
 
 
@@ -111,7 +127,7 @@ def generate_completion(payload: CompletionRequestPayload) -> Dict[str, Any]:
             max_tokens=payload.max_tokens,
         )
         items = completion_service.generate_completion(req)
-        return {"items": [item.__dict__ for item in items]}
+        return {"items": [asdict(item) for item in items]}
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
