@@ -12,6 +12,7 @@
     "dev": "npm --workspace=@aughome/desktop run dev",
     "test": "node --test tests/*.test.js",
     "test:backend": "py -m unittest discover -s apps/backend/tests",
+    "setup:python": "pip install -e ../augagent -e apps/backend",
     "lint": "echo \"Linting workspace...\"",
     "build": "echo \"Building workspace packages...\""
   },

@@ -36,23 +36,14 @@ from aughome.workspace import (
     write_file_content,
 )
 
-# Optional augagent tool imports with graceful fallbacks
-try:
-    from augagent.tools_search import grep_search
-except ImportError:
-    grep_search = None  # type: ignore
-
-try:
-    from augagent.tools_git import git_commit as aug_git_commit, git_status as aug_git_status, git_add as aug_git_add
-except ImportError:
-    aug_git_commit = None  # type: ignore
-    aug_git_status = None  # type: ignore
-    aug_git_add = None  # type: ignore
-
-try:
-    from augagent.pty_server import handle_terminal_ws
-except ImportError:
-    handle_terminal_ws = None  # type: ignore
+# Core augagent integration tools
+from augagent.pty_server import handle_terminal_ws
+from augagent.tools_git import (
+    git_add as aug_git_add,
+    git_commit as aug_git_commit,
+    git_status as aug_git_status,
+)
+from augagent.tools_search import grep_search
 
 try:
     from aughome.completion import CompletionRequest, CompletionService

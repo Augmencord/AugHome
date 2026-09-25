@@ -1,8 +1,10 @@
 {
   "python.analysis.extraPaths": [
+    "../augagent",
     "./apps/backend"
   ],
   "python.autoComplete.extraPaths": [
+    "../augagent",
     "./apps/backend"
   ]
 }
