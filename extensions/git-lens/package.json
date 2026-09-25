@@ -1,0 +1,13 @@
+{
+  "name": "@aughome/extension-git-lens",
+  "version": "0.1.0",
+  "description": "Bundled GitLens extension for AugHome IDE",
+  "main": "index.js",
+  "keywords": [
+    "git",
+    "extension",
+    "aughome"
+  ],
+  "author": "Augmencord",
+  "license": "MIT"
+}

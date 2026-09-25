@@ -1,0 +1,23 @@
+{
+  "name": "@aughome/desktop",
+  "version": "0.1.0",
+  "description": "AugHome IDE Electron Main Process",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "electron dist/main.js"
+  },
+  "keywords": [
+    "electron",
+    "ide",
+    "aughome"
+  ],
+  "author": "Augmencord",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "typescript": "^5.4.0"
+  }
+}

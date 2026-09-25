@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AugHome IDE — Development Blueprint</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-card: #12121a;
+    --bg-card-alt: #1a1a28;
+    --bg-accent: #1e1e2e;
+    --border: #2a2a3a;
+    --border-accent: #3a3a5a;
+    --text-primary: #e4e4ef;
+    --text-secondary: #9a9ab0;
+    --text-muted: #6a6a80;
+    --accent-purple: #a855f7;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-green: #22c55e;
+    --accent-orange: #f97316;
+    --accent-red: #ef4444;
+    --accent-pink: #ec4899;
+    --accent-yellow: #eab308;
+    --gradient-1: linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #06b6d4 100%);
+    --gradient-2: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+    --gradient-3: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.7;
+    font-size: 11pt;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 50px;
+  }
+
+  /* ─── COVER PAGE ─── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 40%, rgba(168,85,247,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(59,130,246,0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(6,182,212,0.04) 0%, transparent 50%);
+    z-index: 0;
+  }
+
+  .cover > * { position: relative; z-index: 1; }
+
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 50px;
+    border: 1px solid var(--border-accent);
+    background: var(--bg-card);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--accent-purple);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+
+  .cover-badge .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+  }
+
+  .cover h1 {
+    font-size: 4rem;
+    font-weight: 900;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -2px;
+  }
+
+  .cover .subtitle {
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: var(--text-secondary);
+    margin-bottom: 50px;
+  }
+
+  .cover-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 60px;
+  }
+
+  .cover-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .cover-meta-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .cover-footer {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .cover-footer .divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+  }
+
+  /* ─── TABLE OF CONTENTS ─── */
+  .toc {
+    page-break-after: always;
+    padding: 60px 0;
+  }
+
+  .toc h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 40px;
+    background: var(--gradient-2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .toc-list {
+    list-style: none;
+    counter-reset: toc;
+  }
+
+  .toc-list li {
+    counter-increment: toc;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .toc-list li::before {
+    content: "0" counter(toc);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-purple);
+    min-width: 30px;
+  }
+
+  .toc-list li a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    flex: 1;
+  }
+
+  .toc-list li .toc-page {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  /* ─── SECTION HEADERS ─── */
+  .section {
+    page-break-before: always;
+    padding-top: 50px;
+  }
+
+  .section-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-purple);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h2.section-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+  }
+
+  .section-line {
+    height: 3px;
+    width: 60px;
+    background: var(--gradient-1);
+    border-radius: 3px;
+    margin-bottom: 30px;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 30px 0 15px;
+    color: var(--text-primary);
+  }
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 20px 0 10px;
+    color: var(--accent-cyan);
+  }
+
+  p {
+    margin-bottom: 14px;
+    color: var(--text-secondary);
+  }
+
+  strong { color: var(--text-primary); font-weight: 600; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+
+  .card-highlight {
+    border-left: 3px solid var(--accent-purple);
+  }
+
+  .card-warning {
+    border-left: 3px solid var(--accent-orange);
+    background: rgba(249, 115, 22, 0.05);
+  }
+
+  .card-danger {
+    border-left: 3px solid var(--accent-red);
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  .card-success {
+    border-left: 3px solid var(--accent-green);
+    background: rgba(34, 197, 94, 0.05);
+  }
+
+  .card-info {
+    border-left: 3px solid var(--accent-blue);
+    background: rgba(59, 130, 246, 0.05);
+  }
+
+  .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .card-danger .card-label { color: var(--accent-red); }
+  .card-warning .card-label { color: var(--accent-orange); }
+  .card-success .card-label { color: var(--accent-green); }
+  .card-info .card-label { color: var(--accent-blue); }
+
+  /* ─── TABLES ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.85rem;
+  }
+
+  thead th {
+    background: var(--bg-accent);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border-accent);
+  }
+
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+
+  tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+
+  tbody tr:hover { background: rgba(168, 85, 247, 0.03); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .badge-purple { background: rgba(168,85,247,0.15); color: var(--accent-purple); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent-blue); }
+  .badge-green { background: rgba(34,197,94,0.15); color: var(--accent-green); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+  .badge-orange { background: rgba(249,115,22,0.15); color: var(--accent-orange); }
+  .badge-cyan { background: rgba(6,182,212,0.15); color: var(--accent-cyan); }
+
+  /* ─── CODE BLOCKS ─── */
+  pre {
+    background: var(--bg-accent);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+  }
+
+  pre code { color: var(--text-secondary); }
+
+  .code-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 8px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    margin-top: 16px;
+    margin-bottom: -1px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .code-title + pre { border-radius: 0 0 10px 10px; margin-top: 0; }
+
+  .keyword { color: var(--accent-purple); }
+  .string { color: var(--accent-green); }
+  .comment { color: var(--text-muted); font-style: italic; }
+  .func { color: var(--accent-blue); }
+  .type { color: var(--accent-cyan); }
+  .param { color: var(--accent-orange); }
+
+  /* ─── PROMPT BLOCKS ─── */
+  .prompt-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin: 24px 0;
+    overflow: hidden;
+  }
+
+  .prompt-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--bg-accent);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .prompt-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--gradient-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .prompt-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+  }
+
+  .prompt-body {
+    padding: 20px 24px;
+  }
+
+  .prompt-body pre {
+    background: #0d0d14;
+    border: 1px solid rgba(168,85,247,0.2);
+    font-size: 0.78rem;
+  }
+
+  /* ─── ARCHITECTURE DIAGRAM (TEXT-BASED) ─── */
+  .arch-diagram {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 30px;
+    margin: 24px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ─── FLOW BOXES ─── */
+  .flow-row {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+
+  .flow-box {
+    flex: 1;
+    min-width: 140px;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    text-align: center;
+  }
+
+  .flow-box-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+
+  .flow-box-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .flow-box-desc {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .flow-box.purple { border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.05); }
+  .flow-box.blue { border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.05); }
+  .flow-box.cyan { border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.05); }
+  .flow-box.green { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+  .flow-box.orange { border-color: rgba(249,115,22,0.3); background: rgba(249,115,22,0.05); }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  /* ─── TIMELINE ─── */
+  .timeline {
+    position: relative;
+    padding-left: 40px;
+    margin: 24px 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-accent);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -33px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-purple);
+    border: 3px solid var(--bg-primary);
+    box-shadow: 0 0 0 2px var(--accent-purple);
+  }
+
+  .timeline-phase {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent-purple);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .timeline-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+  }
+
+  .timeline-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  /* ─── STAR RATINGS ─── */
+  .stars { color: var(--accent-yellow); letter-spacing: 2px; font-size: 0.8rem; }
+
+  /* ─── LISTS ─── */
+  ul, ol {
+    padding-left: 20px;
+    margin: 10px 0;
+    color: var(--text-secondary);
+  }
+
+  li { margin-bottom: 6px; }
+  li strong { color: var(--text-primary); }
+
+  /* ─── DIVIDERS ─── */
+  hr {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  /* ─── PRINT STYLES ─── */
+  @media print {
+    /* === BASE === */
+    body { background: #ffffff !important; color: #1a1a1a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { padding: 30px 40px; }
+    @page { margin: 1cm; size: A4; }
+
+    /* === COVER PAGE === */
+    .cover { min-height: auto; padding: 100px 0; }
+    .cover::before { display: none; }
+    .cover h1 { font-size: 3rem; -webkit-text-fill-color: #6d28d9 !important; color: #6d28d9 !important; background: none !important; }
+    .cover .subtitle { color: #444 !important; }
+    .cover-badge { background: #f0ecf9 !important; border-color: #d4c8f0 !important; color: #6d28d9 !important; }
+    .cover-badge .dot { background: #16a34a !important; box-shadow: none !important; }
+    .cover-meta-item { background: #f5f5fa !important; border-color: #d0d0e0 !important; color: #333 !important; }
+    .cover-meta-item strong { color: #111 !important; }
+    .cover-footer { color: #666 !important; }
+    .cover-footer .divider { background: #ccc !important; }
+
+    /* === TABLE OF CONTENTS === */
+    .toc h2 { -webkit-text-fill-color: #6d28d9 !important; color: #6d28d9 !important; background: none !important; }
+    .toc-list li { border-bottom-color: #ddd !important; }
+    .toc-list li::before { color: #6d28d9 !important; }
+    .toc-list li a { color: #1a1a2e !important; }
+    .toc-list li .toc-page { color: #666 !important; }
+
+    /* === SECTION HEADERS === */
+    .section { page-break-before: always; }
+    .section-number { color: #6d28d9 !important; }
+    h2.section-title { color: #111 !important; }
+    .section-line { background: #6d28d9 !important; }
+    h3 { color: #1a1a2e !important; }
+    h4 { color: #0e7490 !important; }
+
+    /* === TEXT === */
+    p { color: #333 !important; }
+    strong { color: #111 !important; }
+    li { color: #333 !important; }
+    li strong { color: #111 !important; }
+    code { color: #333 !important; }
+
+    /* === CARDS === */
+    .card { background: #f8f8fc !important; border-color: #d0d0e0 !important; }
+    .card p { color: #333 !important; }
+    .card-highlight { border-left-color: #6d28d9 !important; }
+    .card-warning { border-left-color: #d97706 !important; background: #fffbeb !important; }
+    .card-danger { border-left-color: #dc2626 !important; background: #fef2f2 !important; }
+    .card-success { border-left-color: #16a34a !important; background: #f0fdf4 !important; }
+    .card-info { border-left-color: #2563eb !important; background: #eff6ff !important; }
+    .card-label { font-weight: 700 !important; }
+    .card-danger .card-label { color: #dc2626 !important; }
+    .card-warning .card-label { color: #d97706 !important; }
+    .card-success .card-label { color: #16a34a !important; }
+    .card-info .card-label { color: #2563eb !important; }
+
+    /* === TABLES === */
+    table { border: 1px solid #ddd !important; }
+    thead th { background: #f0f0f5 !important; color: #444 !important; border-bottom-color: #ccc !important; }
+    tbody td { color: #333 !important; border-bottom-color: #e8e8ee !important; }
+    tbody td strong { color: #111 !important; }
+    tbody td code { color: #6d28d9 !important; background: #f0ecf9 !important; padding: 1px 4px; border-radius: 3px; }
+    tbody tr:hover { background: transparent !important; }
+
+    /* === BADGES === */
+    .badge { border: 1px solid !important; }
+    .badge-purple { background: #f0ecf9 !important; color: #6d28d9 !important; border-color: #d4c8f0 !important; }
+    .badge-blue { background: #eff6ff !important; color: #2563eb !important; border-color: #bfdbfe !important; }
+    .badge-green { background: #f0fdf4 !important; color: #16a34a !important; border-color: #bbf7d0 !important; }
+    .badge-red { background: #fef2f2 !important; color: #dc2626 !important; border-color: #fecaca !important; }
+    .badge-orange { background: #fffbeb !important; color: #d97706 !important; border-color: #fed7aa !important; }
+    .badge-cyan { background: #ecfeff !important; color: #0e7490 !important; border-color: #a5f3fc !important; }
+
+    /* === GAP TAGS === */
+    .gap-tag { border: 1px solid !important; }
+    .gap-critical { background: #fef2f2 !important; color: #dc2626 !important; border-color: #fecaca !important; }
+    .gap-important { background: #fffbeb !important; color: #d97706 !important; border-color: #fed7aa !important; }
+    .gap-nice { background: #eff6ff !important; color: #2563eb !important; border-color: #bfdbfe !important; }
+
+    /* === CODE BLOCKS === */
+    pre { background: #f5f5fa !important; border-color: #d0d0e0 !important; }
+    pre code { color: #333 !important; }
+    .code-title { background: #eeeef5 !important; border-color: #d0d0e0 !important; color: #555 !important; }
+    .keyword { color: #6d28d9 !important; }
+    .string { color: #16a34a !important; }
+    .comment { color: #888 !important; }
+    .func { color: #2563eb !important; }
+    .type { color: #0e7490 !important; }
+    .param { color: #d97706 !important; }
+
+    /* === PROMPT BLOCKS === */
+    .prompt-block { background: #f8f8fc !important; border-color: #d0d0e0 !important; }
+    .prompt-header { background: #f0f0f5 !important; border-bottom-color: #d0d0e0 !important; }
+    .prompt-number { background: #6d28d9 !important; color: #fff !important; }
+    .prompt-title { color: #111 !important; }
+    .prompt-header div[style] { color: #666 !important; }
+    .prompt-body pre { background: #f0f0f5 !important; border-color: #d0d0e0 !important; }
+    .prompt-body pre code { color: #333 !important; }
+
+    /* === FLOW BOXES === */
+    .flow-box { background: #f8f8fc !important; border-color: #d0d0e0 !important; }
+    .flow-box.purple { background: #f5f0ff !important; border-color: #d4c8f0 !important; }
+    .flow-box.blue { background: #eff6ff !important; border-color: #bfdbfe !important; }
+    .flow-box.cyan { background: #ecfeff !important; border-color: #a5f3fc !important; }
+    .flow-box.green { background: #f0fdf4 !important; border-color: #bbf7d0 !important; }
+    .flow-box.orange { background: #fffbeb !important; border-color: #fed7aa !important; }
+    .flow-box-label { color: #111 !important; }
+    .flow-box-desc { color: #444 !important; }
+    .flow-arrow { color: #888 !important; }
+
+    /* === TIMELINE === */
+    .timeline::before { background: #d0d0e0 !important; }
+    .timeline-item { background: #f8f8fc !important; border-color: #d0d0e0 !important; }
+    .timeline-item::before { background: #6d28d9 !important; border-color: #fff !important; box-shadow: 0 0 0 2px #6d28d9 !important; }
+    .timeline-phase { color: #6d28d9 !important; }
+    .timeline-title { color: #111 !important; }
+    .timeline-desc { color: #333 !important; }
+    .timeline-desc strong { color: #111 !important; }
+
+    /* === SCORE BARS === */
+    .score-bar-container span { color: #333 !important; }
+    .score-bar-label { color: #111 !important; }
+    .score-bar-track { background: #e8e8ee !important; }
+
+    /* === STARS === */
+    .stars { color: #d97706 !important; }
+
+    /* === DIRECTORY TREE === */
+    .dir-tree { background: #f5f5fa !important; border-color: #d0d0e0 !important; color: #333 !important; }
+    .dir-tree .folder { color: #2563eb !important; }
+    .dir-tree .file { color: #333 !important; }
+    .dir-tree .comment { color: #888 !important; }
+
+    /* === ARCH DIAGRAM === */
+    .arch-diagram { background: #f5f5fa !important; border-color: #d0d0e0 !important; color: #333 !important; }
+
+    /* === MISC === */
+    hr { background: #ddd !important; }
+    .section-number, .card-label, .timeline-phase, .toc-list li::before { color: #6d28d9 !important; }
+  }
+
+  /* ─── GAP INDICATOR ─── */
+  .gap-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+
+  .gap-critical { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+  .gap-important { background: rgba(249,115,22,0.15); color: var(--accent-orange); }
+  .gap-nice { background: rgba(59,130,246,0.15); color: var(--accent-blue); }
+
+  /* ─── SCORE BAR ─── */
+  .score-bar-container {
+    display: flex; align-items: center; gap: 12px; margin: 16px 0;
+  }
+  .score-bar-track {
+    flex: 1; height: 10px; background: var(--bg-accent); border-radius: 5px; overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%; border-radius: 5px; transition: width 0.3s ease;
+  }
+  .score-bar-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 700; min-width: 40px;
+  }
+
+  .dir-tree {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    padding: 20px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 16px 0;
+    white-space: pre;
+  }
+  .dir-tree .folder { color: var(--accent-blue); font-weight: 600; }
+  .dir-tree .file { color: var(--text-secondary); }
+  .dir-tree .comment { color: var(--text-muted); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- COVER PAGE -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge"><span class="dot"></span> Development Blueprint v1.0</div>
+  <h1>AugHome IDE</h1>
+  <p class="subtitle">An AI-Native, Open-Source Code Editor<br>Powered by Augagent</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item">🏗️ <strong>Framework:</strong>&nbsp;Augagent v1.3.0</div>
+    <div class="cover-meta-item">🧠 <strong>Models:</strong>&nbsp;Gemini · OpenAI · Ollama</div>
+    <div class="cover-meta-item">⚡ <strong>Builder:</strong>&nbsp;Antigravity + Gemini 3.8 Flash</div>
+  </div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">🎯 <strong>Target Repo:</strong>&nbsp;Augmencord/AugHome</div>
+    <div class="cover-meta-item">🤖 <strong>Agent Repo:</strong>&nbsp;Augmencord/augagent</div>
+  </div>
+  <div class="cover-footer">
+    <span>Prepared by Antigravity AI</span>
+    <span class="divider"></span>
+    <span>September 2026</span>
+    <span class="divider"></span>
+    <span>Confidential</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ul class="toc-list">
+    <li><a href="#s1">Executive Summary</a></li>
+    <li><a href="#s2">Augagent Capability Audit</a></li>
+    <li><a href="#s3">Gap Analysis — What's Missing</a></li>
+    <li><a href="#s4">Remediation Roadmap</a></li>
+    <li><a href="#s5">AugHome IDE Architecture</a></li>
+    <li><a href="#s6">Multi-Model Integration Strategy</a></li>
+    <li><a href="#s7">Structured Prompts for Antigravity + Gemini 3.8 Flash</a></li>
+    <li><a href="#s8">Phased Delivery Timeline</a></li>
+    <li><a href="#s9">Risk Register</a></li>
+  </ul>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: EXECUTIVE SUMMARY -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s1">
+  <div class="section-number">Section 01</div>
+  <h2 class="section-title">Executive Summary</h2>
+  <div class="section-line"></div>
+
+  <p><strong>Objective:</strong> Build <strong>AugHome IDE</strong> — a modern, open-source, AI-native code editor at par with Antigravity, GitHub Copilot, and Cursor. The IDE will be powered by the <strong>Augagent</strong> multi-agent orchestration framework and support pluggable model backends (Gemini, OpenAI, Ollama, and any OpenAI-compatible local model).</p>
+
+  <div class="card card-highlight">
+    <div class="card-label" style="color:var(--accent-purple);">Key Finding</div>
+    <p style="margin:0;">Augagent v1.3.0 provides a <strong>solid 60–65% foundation</strong> for an IDE agent backend. It has the ReAct loop, multi-model fallback, MCP integration, file/terminal/web tools, state persistence, and audit logging. However, it is <strong>missing critical IDE-specific capabilities</strong> — streaming output, file write/edit tools, LSP integration, diff/patch generation, code indexing at scale, inline completion, and extension marketplace infrastructure.</p>
+  </div>
+
+  <h3>Readiness Score</h3>
+  <div class="score-bar-container">
+    <span style="font-size:0.85rem;color:var(--text-secondary);min-width:120px;">Core Engine</span>
+    <div class="score-bar-track"><div class="score-bar-fill" style="width:90%;background:var(--accent-green);"></div></div>
+    <span class="score-bar-label" style="color:var(--accent-green);">90%</span>
+  </div>
+  <div class="score-bar-container">
+    <span style="font-size:0.85rem;color:var(--text-secondary);min-width:120px;">IDE Tools</span>
+    <div class="score-bar-track"><div class="score-bar-fill" style="width:35%;background:var(--accent-orange);"></div></div>
+    <span class="score-bar-label" style="color:var(--accent-orange);">35%</span>
+  </div>
+  <div class="score-bar-container">
+    <span style="font-size:0.85rem;color:var(--text-secondary);min-width:120px;">Frontend / UI</span>
+    <div class="score-bar-track"><div class="score-bar-fill" style="width:5%;background:var(--accent-red);"></div></div>
+    <span class="score-bar-label" style="color:var(--accent-red);">5%</span>
+  </div>
+  <div class="score-bar-container">
+    <span style="font-size:0.85rem;color:var(--text-secondary);min-width:120px;">Overall</span>
+    <div class="score-bar-track"><div class="score-bar-fill" style="width:63%;background:var(--gradient-1);"></div></div>
+    <span class="score-bar-label" style="color:var(--accent-purple);">63%</span>
+  </div>
+
+  <p><strong>Approach:</strong> All development will be executed via <strong>Antigravity + Gemini 3.8 Flash vibe coding</strong> with structured prompts designed for minimal human intervention. This document contains the complete prompt library (10 autonomous prompts).</p>
+
+  <div class="card card-warning">
+    <div class="card-label">Important</div>
+    <p style="margin:0;">The AugHome GitHub repository (<code>Augmencord/AugHome</code>) <strong>does not exist yet</strong> (returns 404). It needs to be created as the first step of execution.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: AUGAGENT CAPABILITY AUDIT -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="section-number">Section 02</div>
+  <h2 class="section-title">Augagent Capability Audit</h2>
+  <div class="section-line"></div>
+
+  <h3>2.1 Repository Overview</h3>
+  <table>
+    <thead><tr><th>Property</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Version</strong></td><td>1.3.0 (Production/Stable)</td></tr>
+      <tr><td><strong>Language</strong></td><td>Python 3.10+</td></tr>
+      <tr><td><strong>License</strong></td><td>MIT</td></tr>
+      <tr><td><strong>Core Deps</strong></td><td><code>pydantic>=2.0.0</code>, <code>httpx>=0.24.0</code></td></tr>
+      <tr><td><strong>Optional Extras</strong></td><td><code>[api]</code> FastAPI &middot; <code>[telemetry]</code> OpenTelemetry &middot; <code>[mcp]</code> Model Context Protocol</td></tr>
+      <tr><td><strong>Source Modules</strong></td><td>22 files across <code>augagent/</code></td></tr>
+      <tr><td><strong>Open Issues</strong></td><td>4 (including hierarchical context routing)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Module-by-Module Analysis</h3>
+  <table>
+    <thead><tr><th>Module</th><th>Size</th><th>Purpose</th><th>IDE Relevance</th></tr></thead>
+    <tbody>
+      <tr><td><code>agent.py</code></td><td>39.5 KB</td><td>Core ReAct loop, persona, LLM comms, fallback routing, human approval, handoffs</td><td><span class="stars">★★★★★</span></td></tr>
+      <tr><td><code>models.py</code></td><td>11.3 KB</td><td>Pydantic schemas: LLMConfig (multi-provider), TokenBudget, TaskResult, Handoff</td><td><span class="stars">★★★★★</span></td></tr>
+      <tr><td><code>tools.py</code></td><td>13.2 KB</td><td>AugTool abstraction, <code>@aug_tool</code> decorator, OpenAI schema generation</td><td><span class="stars">★★★★★</span></td></tr>
+      <tr><td><code>team.py</code></td><td>13.8 KB</td><td>Multi-agent orchestration (Sequential, Hierarchical, Graph modes)</td><td><span class="stars">★★★★</span></td></tr>
+      <tr><td><code>graph.py</code></td><td>4.7 KB</td><td>DAG engine, conditional edges, typed state reducers, parallel execution</td><td><span class="stars">★★★★</span></td></tr>
+      <tr><td><code>mcp_client.py</code></td><td>6.5 KB</td><td>MCP client wrapper: stdio + SSE transports, auto-reconnect, tool discovery</td><td><span class="stars">★★★★★</span></td></tr>
+      <tr><td><code>mcp_server.py</code></td><td>3.1 KB</td><td>MCP server exposing augagent tools externally</td><td><span class="stars">★★★</span></td></tr>
+      <tr><td><code>tools_file.py</code></td><td>4.5 KB</td><td>File viewing with pagination (500-line cap)</td><td><span class="stars">★★★</span></td></tr>
+      <tr><td><code>tools_terminal.py</code></td><td>3.8 KB</td><td>Subprocess execution (30s timeout, Windows support, allowlist)</td><td><span class="stars">★★★</span></td></tr>
+      <tr><td><code>tools_web.py</code></td><td>3.1 KB</td><td>Web search via local SearxNG, HTML-to-markdown scraping</td><td><span class="stars">★★</span></td></tr>
+      <tr><td><code>pty_server.py</code></td><td>4.2 KB</td><td>WebSocket PTY (winpty/pty), sandbox via Docker</td><td><span class="stars">★★★★★</span></td></tr>
+      <tr><td><code>api.py</code></td><td>18.7 KB</td><td>FastAPI backend with RBAC, REST agent endpoints</td><td><span class="stars">★★★★</span></td></tr>
+      <tr><td><code>audit.py</code></td><td>4.7 KB</td><td>Immutable JSONL audit logging with PII redaction</td><td><span class="stars">★★★</span></td></tr>
+      <tr><td><code>memory.py</code></td><td>7.1 KB</td><td>Short-term, long-term, entity memory with ChromaDB</td><td><span class="stars">★★★★</span></td></tr>
+      <tr><td><code>checkpoint.py</code></td><td>4.5 KB</td><td>SQLite state checkpointing for durable sessions</td><td><span class="stars">★★★★</span></td></tr>
+      <tr><td><code>cache.py</code></td><td>3.1 KB</td><td>Response caching layer</td><td><span class="stars">★★★</span></td></tr>
+      <tr><td><code>indexer.py</code></td><td>3.2 KB</td><td>Code/document indexing into ChromaDB</td><td><span class="stars">★★★★</span></td></tr>
+      <tr><td><code>execution_store.py</code></td><td>5.8 KB</td><td>Persistent execution history store</td><td><span class="stars">★★★</span></td></tr>
+      <tr><td><code>tenant_store.py</code></td><td>3.4 KB</td><td>Multi-tenant data isolation</td><td><span class="stars">★★</span></td></tr>
+      <tr><td><code>plugin_manager.py</code></td><td>2.2 KB</td><td>Plugin loading and lifecycle</td><td><span class="stars">★★★★</span></td></tr>
+      <tr><td><code>telemetry.py</code></td><td>2.7 KB</td><td>OpenTelemetry structured logging and tracing</td><td><span class="stars">★★★</span></td></tr>
+      <tr><td><code>cli.py</code></td><td>2.0 KB</td><td>CLI entry point</td><td><span class="stars">★★</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 Strengths Summary</h3>
+  <div class="flow-row">
+    <div class="flow-box purple">
+      <div class="flow-box-icon">🧠</div>
+      <div class="flow-box-label">Core Engine</div>
+      <div class="flow-box-desc">ReAct loop · 25-iter cap · Token budgets · Human approval · Handoffs</div>
+    </div>
+    <div class="flow-box blue">
+      <div class="flow-box-icon">🔄</div>
+      <div class="flow-box-label">Multi-Agent</div>
+      <div class="flow-box-desc">Sequential · Hierarchical · Graph/DAG · Typed state reducers</div>
+    </div>
+    <div class="flow-box cyan">
+      <div class="flow-box-icon">🔌</div>
+      <div class="flow-box-label">Integration</div>
+      <div class="flow-box-desc">MCP client/server · OpenAI compat · Ollama · vLLM · LiteLLM</div>
+    </div>
+  </div>
+  <div class="flow-row">
+    <div class="flow-box green">
+      <div class="flow-box-icon">💾</div>
+      <div class="flow-box-label">Persistence</div>
+      <div class="flow-box-desc">SQLite checkpoints · ChromaDB vectors · JSONL audit · Exec history</div>
+    </div>
+    <div class="flow-box orange">
+      <div class="flow-box-icon">🛠️</div>
+      <div class="flow-box-label">IDE Primitives</div>
+      <div class="flow-box-desc">File view · Terminal exec · PTY WebSocket · Web search · Plugins</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: GAP ANALYSIS -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="section-number">Section 03</div>
+  <h2 class="section-title">Gap Analysis — What's Missing</h2>
+  <div class="section-line"></div>
+
+  <div class="card card-danger">
+    <div class="card-label">Caution</div>
+    <p style="margin:0;">The following gaps represent <strong>critical blockers</strong> that must be resolved before Augagent can power a production IDE competitive with Antigravity or Copilot.</p>
+  </div>
+
+  <h3>3.1 Critical Gaps (Must Fix)</h3>
+  <table>
+    <thead><tr><th>#</th><th>Gap</th><th>Why It Matters</th><th>Comparable In</th></tr></thead>
+    <tbody>
+      <tr><td><span class="gap-tag gap-critical">G1</span></td><td><strong>No Streaming Output</strong></td><td>Responses appear all-at-once. <code>agent.py</code> does batch HTTP — no SSE/streaming.</td><td>Antigravity, Copilot, Cursor</td></tr>
+      <tr><td><span class="gap-tag gap-critical">G2</span></td><td><strong>No File Write/Edit/Diff Tool</strong></td><td><code>tools_file.py</code> only has <code>view_file</code>. No write, create, patch, or diff-apply.</td><td>All IDE agents</td></tr>
+      <tr><td><span class="gap-tag gap-critical">G3</span></td><td><strong>No Code Search / Grep</strong></td><td><code>indexer.py</code> is ChromaDB-only semantic search. No AST-aware grep or ripgrep.</td><td>Antigravity, Cursor</td></tr>
+      <tr><td><span class="gap-tag gap-critical">G4</span></td><td><strong>No LSP Integration</strong></td><td>No Language Server Protocol bridge. No hover, go-to-def, diagnostics, or refactoring.</td><td>VS Code, Antigravity</td></tr>
+      <tr><td><span class="gap-tag gap-critical">G5</span></td><td><strong>No Inline Completion</strong></td><td>Chat-only mode. No ghost-text / Fill-in-the-Middle (FIM) pipeline.</td><td>Copilot, Cursor</td></tr>
+      <tr><td><span class="gap-tag gap-critical">G6</span></td><td><strong>No Diff/Patch Generation</strong></td><td>Cannot generate unified diffs or present file changes in reviewable format.</td><td>Antigravity, Aider</td></tr>
+      <tr><td><span class="gap-tag gap-critical">G7</span></td><td><strong>Terminal Limitations</strong></td><td>30-second hard timeout, fixed allowlist, no daemon/background process support.</td><td>Antigravity</td></tr>
+      <tr><td><span class="gap-tag gap-critical">G8</span></td><td><strong>No Git Tools</strong></td><td>No commit, branch, push, pull, or conflict resolution tools.</td><td>VS Code, Antigravity</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Important Gaps (Should Fix)</h3>
+  <table>
+    <thead><tr><th>#</th><th>Gap</th><th>Why It Matters</th></tr></thead>
+    <tbody>
+      <tr><td><span class="gap-tag gap-important">G9</span></td><td><strong>No Editor Frontend</strong></td><td>Backend-only framework. No Monaco/CodeMirror, no Electron shell, no UI.</td></tr>
+      <tr><td><span class="gap-tag gap-important">G10</span></td><td><strong>No Extension Marketplace</strong></td><td><code>plugin_manager.py</code> is a basic loader. No discovery, versioning, or sandboxing.</td></tr>
+      <tr><td><span class="gap-tag gap-important">G11</span></td><td><strong>No Workspace Management</strong></td><td>No project files, <code>.aughome/</code> config, or workspace settings.</td></tr>
+      <tr><td><span class="gap-tag gap-important">G12</span></td><td><strong>No Multi-File Context</strong></td><td>Single-prompt processing. No intelligent context selection across open files.</td></tr>
+      <tr><td><span class="gap-tag gap-important">G13</span></td><td><strong>No Vision/Multimodal</strong></td><td>LLMConfig and ReAct loop don't handle image inputs.</td></tr>
+      <tr><td><span class="gap-tag gap-important">G14</span></td><td><strong>No Keybinding System</strong></td><td>IDE needs command palette, configurable shortcuts, and discovery.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Nice-to-Have Gaps (Can Defer)</h3>
+  <table>
+    <thead><tr><th>#</th><th>Gap</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><span class="gap-tag gap-nice">G15</span></td><td>No Collaborative Editing (CRDT)</td><td>Not needed for v1</td></tr>
+      <tr><td><span class="gap-tag gap-nice">G16</span></td><td>No Remote Dev (SSH/Container)</td><td>PTY sandbox exists as a starting point</td></tr>
+      <tr><td><span class="gap-tag gap-nice">G17</span></td><td>No Notebook/REPL Support</td><td>Can be added as extension</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: REMEDIATION ROADMAP -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="section-number">Section 04</div>
+  <h2 class="section-title">Remediation Roadmap</h2>
+  <div class="section-line"></div>
+
+  <h3>4.1 Augagent Enhancement Tasks</h3>
+  <table>
+    <thead><tr><th>Gap</th><th>Enhancement</th><th>Implementation Approach</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="gap-tag gap-critical">G1</span></td>
+        <td><strong>Streaming SSE</strong></td>
+        <td>Add <code>stream=True</code> to httpx LLM calls. Yield <code>text/event-stream</code> SSE chunks through FastAPI <code>StreamingResponse</code>. Wire to existing <code>stream_callback</code> stub.</td>
+      </tr>
+      <tr>
+        <td><span class="gap-tag gap-critical">G2</span></td>
+        <td><strong>File Write/Edit/Diff</strong></td>
+        <td>New <code>tools_file_write.py</code> with: <code>write_file</code>, <code>replace_in_file</code>, <code>create_file</code>, <code>delete_file</code>. Same <code>@aug_tool</code> pattern. Sandbox-enforced paths.</td>
+      </tr>
+      <tr>
+        <td><span class="gap-tag gap-critical">G3</span></td>
+        <td><strong>Code Search / Grep</strong></td>
+        <td>New <code>tools_search.py</code> with ripgrep-backed grep, glob find, and ctags/tree-sitter symbol search. Python <code>re</code> fallback.</td>
+      </tr>
+      <tr>
+        <td><span class="gap-tag gap-critical">G4</span></td>
+        <td><strong>LSP Bridge</strong></td>
+        <td>New <code>lsp_bridge.py</code> — spawn language servers via JSON-RPC stdio. Expose as tools: <code>get_diagnostics</code>, <code>go_to_definition</code>, <code>hover_info</code>, <code>rename_symbol</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="gap-tag gap-critical">G5</span></td>
+        <td><strong>FIM Completion</strong></td>
+        <td>New <code>completion_engine.py</code> — Fill-in-the-Middle pipeline. Direct LLM call (bypasses ReAct for speed). Multi-format templates.</td>
+      </tr>
+      <tr>
+        <td><span class="gap-tag gap-critical">G6</span></td>
+        <td><strong>Diff Engine</strong></td>
+        <td>New <code>diff_engine.py</code> — unified diff generation via Python <code>difflib</code>. Patch application via <code>subprocess</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="gap-tag gap-critical">G7</span></td>
+        <td><strong>Terminal Enhancements</strong></td>
+        <td>Remove 30s hard timeout. Add daemon support. Replace allowlist with configurable sandbox policy. Use <code>asyncio.create_subprocess_exec</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="gap-tag gap-critical">G8</span></td>
+        <td><strong>Git Tools</strong></td>
+        <td>New <code>tools_git.py</code>: <code>git_status</code>, <code>git_commit</code>, <code>git_diff</code>, <code>git_log</code>, <code>git_branch</code>, <code>git_add</code>. Subprocess wrappers with structured output.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: ARCHITECTURE -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s5">
+  <div class="section-number">Section 05</div>
+  <h2 class="section-title">AugHome IDE Architecture</h2>
+  <div class="section-line"></div>
+
+  <h3>5.1 High-Level System Architecture</h3>
+
+  <div class="flow-row">
+    <div class="flow-box purple">
+      <div class="flow-box-icon">🖥️</div>
+      <div class="flow-box-label">Electron Shell</div>
+      <div class="flow-box-desc">Cross-platform desktop app · Window management · Process lifecycle</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box blue">
+      <div class="flow-box-icon">📝</div>
+      <div class="flow-box-label">Monaco Editor</div>
+      <div class="flow-box-desc">React UI · Activity bar · Sidebar · Chat · Terminal · Tabs</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box cyan">
+      <div class="flow-box-icon">⚡</div>
+      <div class="flow-box-label">FastAPI Backend</div>
+      <div class="flow-box-desc">REST API · WebSocket · SSE · Model routing · Workspace manager</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:var(--text-muted);margin:8px 0;font-size:1.2rem;">⬇</div>
+
+  <div class="flow-row">
+    <div class="flow-box green">
+      <div class="flow-box-icon">🤖</div>
+      <div class="flow-box-label">Augagent Engine</div>
+      <div class="flow-box-desc">ReAct loop · Multi-agent teams · MCP hub · Tool registry · State checkpoints</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box orange">
+      <div class="flow-box-icon">🧠</div>
+      <div class="flow-box-label">Model Layer</div>
+      <div class="flow-box-desc">Gemini · OpenAI · Ollama · vLLM · LiteLLM · HuggingFace · Local Models</div>
+    </div>
+  </div>
+
+  <h3>5.2 Technology Stack</h3>
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Editor Core</strong></td><td>Monaco Editor</td><td>Battle-tested, LSP support, themes, extensions. MIT licensed.</td></tr>
+      <tr><td><strong>Desktop Shell</strong></td><td>Electron (or Tauri)</td><td>Cross-platform. Used by VS Code, Cursor, Antigravity.</td></tr>
+      <tr><td><strong>Frontend</strong></td><td>React + TypeScript</td><td>Monaco ecosystem compatibility. Rich component libraries.</td></tr>
+      <tr><td><strong>Backend</strong></td><td>FastAPI (Python)</td><td>Already integrated in augagent. Async, WebSocket, SSE.</td></tr>
+      <tr><td><strong>Agent Engine</strong></td><td>Augagent v1.3.0+</td><td>Core ReAct, multi-agent, MCP, persistence.</td></tr>
+      <tr><td><strong>IPC</strong></td><td>WebSocket + HTTP/SSE</td><td>Dual-channel for latency vs. throughput workloads.</td></tr>
+      <tr><td><strong>Persistence</strong></td><td>SQLite + ChromaDB + FS</td><td>Zero-cloud. All local.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.3 Project Directory Structure</h3>
+  <div class="dir-tree"><span class="folder">AugHome/</span>
+├── <span class="folder">apps/</span>
+│   ├── <span class="folder">desktop/</span>              <span class="comment"># Electron main process (TypeScript)</span>
+│   │   ├── <span class="file">main.ts</span>
+│   │   ├── <span class="file">preload.ts</span>
+│   │   └── <span class="file">package.json</span>
+│   ├── <span class="folder">editor/</span>               <span class="comment"># React + Monaco editor UI</span>
+│   │   ├── <span class="folder">src/</span>
+│   │   │   ├── <span class="folder">components/</span>   <span class="comment"># Editor, Sidebar, Terminal, Chat</span>
+│   │   │   ├── <span class="folder">panels/</span>       <span class="comment"># AI Chat, File Explorer, Search</span>
+│   │   │   ├── <span class="folder">services/</span>     <span class="comment"># WebSocket, API, Theme</span>
+│   │   │   └── <span class="file">App.tsx</span>
+│   │   └── <span class="file">package.json</span>
+│   └── <span class="folder">backend/</span>              <span class="comment"># Python FastAPI + augagent</span>
+│       ├── <span class="folder">augagent/</span>         <span class="comment"># Enhanced fork / git submodule</span>
+│       ├── <span class="folder">aughome/</span>
+│       │   ├── <span class="file">server.py</span>       <span class="comment"># FastAPI entry point</span>
+│       │   ├── <span class="file">lsp_bridge.py</span>   <span class="comment"># LSP integration</span>
+│       │   ├── <span class="file">completion.py</span>   <span class="comment"># FIM inline completion</span>
+│       │   ├── <span class="file">diff_engine.py</span>  <span class="comment"># Diff/patch generation</span>
+│       │   └── <span class="file">model_router.py</span> <span class="comment"># Unified model routing</span>
+│       ├── <span class="file">pyproject.toml</span>
+│       └── <span class="folder">tests/</span>
+├── <span class="folder">extensions/</span>               <span class="comment"># Bundled extensions</span>
+├── <span class="folder">docs/</span>
+├── <span class="folder">.github/workflows/</span>        <span class="comment"># CI/CD</span>
+├── <span class="file">package.json</span>              <span class="comment"># Root monorepo (npm workspaces)</span>
+├── <span class="file">LICENSE</span>
+└── <span class="file">README.md</span></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6: MULTI-MODEL STRATEGY -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s6">
+  <div class="section-number">Section 06</div>
+  <h2 class="section-title">Multi-Model Integration Strategy</h2>
+  <div class="section-line"></div>
+
+  <h3>6.1 Tiered Model Router</h3>
+  <div class="flow-row">
+    <div class="flow-box purple">
+      <div class="flow-box-icon">👑</div>
+      <div class="flow-box-label">Tier 1: Premium</div>
+      <div class="flow-box-desc">Chat · Reasoning · Code Generation<br><br>Gemini 2.5 Pro/Flash · GPT-4o / o3 · Claude Opus/Sonnet</div>
+    </div>
+    <div class="flow-box blue">
+      <div class="flow-box-icon">⚡</div>
+      <div class="flow-box-label">Tier 2: Fast</div>
+      <div class="flow-box-desc">Inline Completion · FIM<br><br>Gemini 3.8 Flash · Qwen2.5-Coder · Codestral · DeepSeek</div>
+    </div>
+    <div class="flow-box cyan">
+      <div class="flow-box-icon">🧲</div>
+      <div class="flow-box-label">Tier 3: Embeddings</div>
+      <div class="flow-box-desc">Code Indexing · Semantic Search<br><br>nomic-embed-text (Local) · Gemini Embedding</div>
+    </div>
+  </div>
+
+  <h3>6.2 Model Configuration Matrix</h3>
+  <table>
+    <thead><tr><th>Use Case</th><th>Primary Model</th><th>Fallback 1</th><th>Fallback 2 (Local)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Agentic Chat</strong></td><td>Gemini 3.8 Flash</td><td>GPT-4o</td><td>Qwen2.5-Coder:32B (Ollama)</td></tr>
+      <tr><td><strong>Complex Reasoning</strong></td><td>Claude Opus</td><td>Gemini 2.5 Pro</td><td>DeepSeek-R1 (Ollama)</td></tr>
+      <tr><td><strong>Inline Completion</strong></td><td>Codestral (Ollama)</td><td>Qwen2.5-Coder:7B</td><td>StarCoder2</td></tr>
+      <tr><td><strong>Embeddings</strong></td><td>nomic-embed-text</td><td>Gemini Embedding</td><td>—</td></tr>
+      <tr><td><strong>Vision / Screenshots</strong></td><td>Gemini Flash</td><td>GPT-4o-mini</td><td>LLaVA (Ollama)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card card-success">
+    <div class="card-label">Existing Support</div>
+    <p style="margin:0;">Augagent's <code>LLMConfig</code> already supports <strong>any OpenAI-compatible endpoint</strong> — including Gemini (via <code>/v1beta/openai</code>), Ollama (<code>localhost:11434/v1</code>), vLLM, and LiteLLM. The <code>fallback_models</code> field in <code>AugAgent</code> enables automatic failover. We only need to add FIM-specific prompt templates and tiered routing logic.</p>
+  </div>
+
+  <h3>6.3 LLMConfig Examples</h3>
+  <div class="code-title">Gemini via OpenAI-compatible API</div>
+  <pre><code><span class="func">LLMConfig</span>(
+    <span class="param">model</span>=<span class="string">"gemini-2.0-flash"</span>,
+    <span class="param">base_url</span>=<span class="string">"https://generativelanguage.googleapis.com/v1beta/openai"</span>,
+    <span class="param">api_key</span>=<span class="func">SecretStr</span>(<span class="string">"YOUR_GEMINI_KEY"</span>),
+)</code></pre>
+
+  <div class="code-title">Local Ollama</div>
+  <pre><code><span class="func">LLMConfig</span>(
+    <span class="param">model</span>=<span class="string">"qwen2.5-coder:7b"</span>,
+    <span class="param">base_url</span>=<span class="string">"http://127.0.0.1:11434/v1"</span>,
+    <span class="param">api_key</span>=<span class="func">SecretStr</span>(<span class="string">"ollama"</span>),
+)</code></pre>
+
+  <div class="code-title">Multi-Model Fallback</div>
+  <pre><code><span class="param">agent</span> = <span class="func">AugAgent</span>(
+    <span class="param">llm_config</span>=primary_config,
+    <span class="param">fallback_models</span>=[fallback_cloud, fallback_local],
+)</code></pre>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7: STRUCTURED PROMPTS -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s7">
+  <div class="section-number">Section 07</div>
+  <h2 class="section-title">Structured Prompts for Antigravity + Gemini 3.8 Flash</h2>
+  <div class="section-line"></div>
+
+  <p>Each prompt below is a <strong>self-contained, autonomous task</strong> for Antigravity vibe coding. Copy-paste into Antigravity's chat (use <code>/goal</code> for long-running tasks) and let Gemini 3.8 Flash execute with minimal human intervention.</p>
+
+  <!-- PROMPT 1 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">1</div>
+      <div>
+        <div class="prompt-title">Create AugHome Repository & Initialize Monorepo</div>
+        <div class="prompt-sub">Sprint 1 · Estimated: 30 min · Dependency: None</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+Create a new public GitHub repository named "AugHome" under the
+organization "Augmencord" with the description "AugHome IDE — An
+AI-native, open-source code editor powered by Augagent". License: MIT.
+
+Initialize as an npm workspace monorepo:
+  apps/desktop/     — Electron main process (TypeScript)
+  apps/editor/      — React + Monaco editor UI
+  apps/backend/     — Python FastAPI + augagent backend
+  extensions/       — Bundled extensions
+  docs/             — Documentation
+  .github/workflows — CI/CD
+
+Create root package.json with npm workspaces. Do NOT install deps yet.
+
+For README.md: professional overview, architecture Mermaid diagram,
+model support matrix, contributing guidelines.
+
+For backend: pyproject.toml with augagent>=1.3.0. Create placeholder
+modules: server.py, lsp_bridge.py, completion.py, diff_engine.py,
+model_router.py.
+
+Push to main branch. Verify at github.com/Augmencord/AugHome.</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 2 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">2</div>
+      <div>
+        <div class="prompt-title">Enhance Augagent — File Write/Edit/Diff Tools</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 1 · Estimated: 1 hour · Fixes: G2, G6</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/augagent, create augagent/tools_file_write.py:
+
+Tools (using @aug_tool pattern):
+  1. write_file(filepath, content) — create/overwrite
+  2. create_file(filepath, content="") — new file only
+  3. replace_in_file(filepath, target, replacement,
+     start_line, end_line) — targeted edit with diff return
+  4. insert_at_line(filepath, line_number, content)
+  5. delete_lines(filepath, start_line, end_line)
+
+Also create augagent/diff_engine.py:
+  - generate_unified_diff(before, after, filepath)
+  - apply_patch(filepath, patch)
+
+All paths must validate against WORKSPACE_ROOT sandbox.
+Write tests: normal, edge (empty/unicode), failure (traversal).
+Update __init__.py exports.
+Commit: "Add file write/edit/diff tools for IDE agent capabilities"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 3 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">3</div>
+      <div>
+        <div class="prompt-title">Enhance Augagent — Streaming Output & SSE</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 1 · Estimated: 1 hour · Fixes: G1</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/augagent, add streaming SSE support:
+
+1. agent.py _call_llm(): add stream=True, use
+   httpx.AsyncClient.stream(), parse SSE chunks, yield
+   via stream_callback parameter.
+
+2. api.py: POST /v1/agent/stream with SSE response
+   Events: token, tool_call, done
+
+3. Tests: mock httpx SSE chunks, verify stream_callback,
+   verify final output matches non-streaming.
+
+Commit: "Add streaming SSE support to agent execution and API"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 4 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">4</div>
+      <div>
+        <div class="prompt-title">Enhance Augagent — Code Search & Git Tools</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 1 · Estimated: 1 hour · Fixes: G3, G7, G8</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/augagent, create two modules:
+
+1. augagent/tools_search.py:
+   - grep_search (ripgrep-backed, Python re fallback)
+   - find_files (glob-based)
+   - list_directory
+
+2. augagent/tools_git.py:
+   - git_status, git_diff, git_commit, git_log,
+     git_branch, git_add
+   - All use subprocess with structured output
+   - Sandbox-validated cwd
+
+Write tests. Update __init__.py.
+Commit: "Add code search and git integration tools"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 5 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">5</div>
+      <div>
+        <div class="prompt-title">Build the Electron Desktop Shell</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 2 · Estimated: 2 hours · Dependency: Prompt 1</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/AugHome, apps/desktop/:
+
+1. Init Electron with Vite + TypeScript
+2. Frameless window: 1400x900, custom title bar
+3. Preload with contextBridge API
+4. Backend process manager: auto-spawn Python backend,
+   health monitoring, graceful shutdown
+5. Build config: NSIS (Win), DMG (Mac), AppImage (Linux)
+6. Dark theme. Load placeholder HTML for now.
+
+Verify: npm run dev launches the app.
+Commit: "Set up Electron desktop shell with backend process manager"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 6 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">6</div>
+      <div>
+        <div class="prompt-title">Build the Monaco Editor UI</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 2 · Estimated: 3 hours · Dependency: Prompt 5</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/AugHome, apps/editor/:
+
+1. Init Vite + React + TypeScript
+2. Install @monaco-editor/react
+
+Build premium IDE layout:
+  a) ACTIVITY BAR (48px) — Explorer, Search, Git, Extensions, AI Chat
+  b) SIDEBAR (resizable, 250px) — File tree, Search, Git status
+  c) EDITOR (center) — Monaco, tabs, minimap, breadcrumbs
+  d) AI CHAT (right, 350px) — Streaming messages, code blocks,
+     "Apply to editor" buttons
+  e) TERMINAL (bottom) — xterm.js via WebSocket PTY
+  f) STATUS BAR — Model name, line/col, encoding, language
+
+Design: Dark theme (VS Code Dark+), JetBrains Mono for code,
+Inter for UI, smooth resize, custom scrollbars.
+
+State: React Context + useReducer. Mock file tree data.
+Commit: "Build Monaco-based editor UI with all panels"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 7 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">7</div>
+      <div>
+        <div class="prompt-title">Build the Backend Server & Wire Everything</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 2 · Estimated: 2 hours · Dependency: Prompts 2-4</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/AugHome, apps/backend/:
+
+Create aughome/server.py (FastAPI):
+  POST /v1/chat (SSE) · POST /v1/complete (FIM)
+  GET /v1/files/tree · GET /v1/files/read · POST /v1/files/write
+  POST /v1/files/edit · GET /v1/search · GET /v1/git/status
+  POST /v1/git/commit · WebSocket /v1/terminal
+  GET /v1/models · POST /v1/models/configure
+
+Create model_router.py: tiered routing, health checks, fallback.
+Create workspace.py: file tree gen, sandbox enforcement.
+
+Wire all augagent tools. CORS for Electron. Integration tests.
+Commit: "Build AugHome backend server with full API"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 8 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">8</div>
+      <div>
+        <div class="prompt-title">Inline Code Completion (FIM Pipeline)</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 3 · Estimated: 2 hours · Fixes: G5</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+Implement inline code completion in Augmencord/AugHome:
+
+Backend (aughome/completion.py):
+  - CompletionEngine: cursor → prefix/suffix → FIM prompt
+  - Multi-format: Codestral, Qwen, StarCoder, Gemini
+  - Context: 100 lines prefix, 50 lines suffix, always include imports
+  - POST /v1/complete: 500ms timeout, request_id dedup
+
+Frontend (apps/editor/):
+  - Monaco InlineCompletionItemProvider
+  - 300ms debounce, cancel in-flight, ghost text display
+  - Tab to accept, Escape to dismiss
+
+Tests: FIM prompt construction, debounce, timeout.
+Commit: "Implement FIM inline completion with multi-model support"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 9 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">9</div>
+      <div>
+        <div class="prompt-title">LSP Integration Bridge</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 3 · Estimated: 3 hours · Fixes: G4</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/AugHome, implement LSP integration:
+
+Backend (aughome/lsp_bridge.py):
+  - LSPBridge: spawn lang servers (stdio JSON-RPC 2.0)
+  - Lifecycle: initialize, initialized, shutdown, exit
+  - Auto-detect: pylsp (Python), tsserver (TS/JS), rust-analyzer, gopls
+  - API: /v1/lsp/diagnostics, /v1/lsp/hover, /v1/lsp/definition,
+    /v1/lsp/completion, /v1/lsp/rename
+  - Feed diagnostics into agent context for "fix errors" prompts
+
+Frontend:
+  - Monaco: squiggly underlines, Ctrl+Click definitions,
+    hover tooltips, Ctrl+Space autocomplete
+
+Commit: "Add LSP integration bridge with multi-language support"</code></pre>
+    </div>
+  </div>
+
+  <!-- PROMPT 10 -->
+  <div class="prompt-block">
+    <div class="prompt-header">
+      <div class="prompt-number">10</div>
+      <div>
+        <div class="prompt-title">Extension System, Settings & Final Polish</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">Sprint 4 · Estimated: 3 hours · Fixes: G10, G11, G14</div>
+      </div>
+    </div>
+    <div class="prompt-body">
+      <pre><code>/goal
+
+In Augmencord/AugHome:
+
+1. Extension system (aughome/extensions.py):
+   - Discover from extensions/ dir, manifest.json format
+   - Load as MCP servers via MCPToolAdapter
+   - Contribute: tools, themes, languages, commands
+
+2. Bundled extensions:
+   - python-support, theme-aughome-dark
+
+3. Settings: ~/.aughome/settings.json, UI editor panel
+
+4. Command palette (Ctrl+Shift+P): fuzzy search, shortcuts
+
+5. Keybindings: VS Code-compatible defaults, customizable
+
+6. Welcome screen: model setup, theme picker, recent projects
+
+7. Update README: screenshots, install guide, model config,
+   contributing guidelines
+
+Commit: "Add extension system, settings, command palette, and polish"</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8: TIMELINE -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s8">
+  <div class="section-number">Section 08</div>
+  <h2 class="section-title">Phased Delivery Timeline</h2>
+  <div class="section-line"></div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-phase">Sprint 1 — Week 1–2</div>
+      <div class="timeline-title">Foundation & Agent Enhancements</div>
+      <div class="timeline-desc">
+        <strong>Prompts 1–4:</strong> Create repo &amp; monorepo skeleton. Enhance augagent with file write/edit/diff tools, streaming SSE, code search (grep), and git integration tools.
+        <br><strong>Human Intervention:</strong> Approve GitHub repo creation. Review API key configuration.
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Sprint 2 — Week 3–4</div>
+      <div class="timeline-title">IDE Shell & Core UI</div>
+      <div class="timeline-desc">
+        <strong>Prompts 5–7:</strong> Electron desktop shell with backend process manager. Monaco-based editor UI with activity bar, sidebar, chat panel, terminal. FastAPI backend server with model routing.
+        <br><strong>Human Intervention:</strong> Verify Electron launches. Test model connectivity.
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Sprint 3 — Week 5–6</div>
+      <div class="timeline-title">AI-Powered Features</div>
+      <div class="timeline-desc">
+        <strong>Prompts 8–9:</strong> FIM inline code completion with multi-model format support. LSP integration bridge with Python, TypeScript, Rust, and Go language server support.
+        <br><strong>Human Intervention:</strong> Test FIM latency. Verify LSP accuracy.
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Sprint 4 — Week 7–8</div>
+      <div class="timeline-title">Polish & Extensibility</div>
+      <div class="timeline-desc">
+        <strong>Prompt 10:</strong> Extension system with MCP integration. Settings management. Command palette. Keybinding system. Welcome screen. Theme system.
+        <br><strong>Human Intervention:</strong> Review UX. Provide design feedback.
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Sprint 5 — Week 9–10</div>
+      <div class="timeline-title">Hardening & Optimization</div>
+      <div class="timeline-desc">
+        Multi-model testing across Gemini, OpenAI, and Ollama. Performance optimization. Cross-platform builds (Windows NSIS, macOS DMG, Linux AppImage). Documentation finalization.
+        <br><strong>Human Intervention:</strong> Cross-platform testing.
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Sprint 6 — Week 11–12</div>
+      <div class="timeline-title">Beta Release</div>
+      <div class="timeline-desc">
+        Beta testing with early users. Bug fixes. Community feedback integration. <strong>v0.1.0 public release</strong> on GitHub.
+        <br><strong>Human Intervention:</strong> Community feedback loop.
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Sprint</th><th>Prompts Used</th><th>Deliverable</th><th>Human Involvement</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-purple">Sprint 1</span></td><td>1, 2, 3, 4</td><td>Enhanced augagent + repo skeleton</td><td>Approve repo creation</td></tr>
+      <tr><td><span class="badge badge-blue">Sprint 2</span></td><td>5, 6, 7</td><td>Working IDE shell with backend</td><td>Verify Electron launch</td></tr>
+      <tr><td><span class="badge badge-cyan">Sprint 3</span></td><td>8, 9</td><td>AI coding features (FIM + LSP)</td><td>Test latency & accuracy</td></tr>
+      <tr><td><span class="badge badge-green">Sprint 4</span></td><td>10</td><td>Extensions, settings, polish</td><td>Review UX</td></tr>
+      <tr><td><span class="badge badge-orange">Sprint 5</span></td><td>Iterative</td><td>Production builds</td><td>Cross-platform testing</td></tr>
+      <tr><td><span class="badge badge-red">Sprint 6</span></td><td>Bug fixes</td><td><strong>v0.1.0 Release</strong></td><td>Community feedback</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9: RISK REGISTER -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="s9">
+  <div class="section-number">Section 09</div>
+  <h2 class="section-title">Risk Register</h2>
+  <div class="section-line"></div>
+
+  <table>
+    <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Augagent's ReAct loop too slow for real-time IDE</td>
+        <td><span class="badge badge-orange">Medium</span></td>
+        <td><span class="badge badge-red">High</span></td>
+        <td>FIM pipeline bypasses ReAct. Direct LLM calls for latency-sensitive paths.</td>
+      </tr>
+      <tr>
+        <td>Monaco Editor bundle makes Electron app heavy</td>
+        <td><span class="badge badge-blue">Low</span></td>
+        <td><span class="badge badge-orange">Medium</span></td>
+        <td>Monaco webpack plugin for tree-shaking. Lazy-load languages.</td>
+      </tr>
+      <tr>
+        <td>Local model quality insufficient for code completion</td>
+        <td><span class="badge badge-orange">Medium</span></td>
+        <td><span class="badge badge-orange">Medium</span></td>
+        <td>Tier model router: cloud primary, local fallback.</td>
+      </tr>
+      <tr>
+        <td>Augagent upstream changes break enhancements</td>
+        <td><span class="badge badge-blue">Low</span></td>
+        <td><span class="badge badge-red">High</span></td>
+        <td>Fork augagent initially. Submit PRs upstream. Pin version.</td>
+      </tr>
+      <tr>
+        <td>GitHub PAT scope insufficient for repo creation</td>
+        <td><span class="badge badge-blue">Low</span></td>
+        <td><span class="badge badge-blue">Low</span></td>
+        <td>Verify token has <code>repo</code> and <code>admin:org</code> scopes before Prompt 1.</td>
+      </tr>
+      <tr>
+        <td>PTY server unreliable on Windows</td>
+        <td><span class="badge badge-orange">Medium</span></td>
+        <td><span class="badge badge-orange">Medium</span></td>
+        <td>winpty already handled. Add conpty fallback. Extensive testing.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <div class="card card-info">
+    <div class="card-label">Next Step</div>
+    <p style="margin:0;"><strong>To begin execution:</strong> Open a new Antigravity session with <strong>Gemini 3.8 Flash</strong> selected, then copy-paste <strong>Prompt 1</strong> from Section 7 with the <code>/goal</code> prefix. Each subsequent prompt should be executed sequentially after the previous one completes. The entire 10-prompt sequence is designed to build AugHome IDE from zero to v0.1.0 beta with minimal human intervention.</p>
+  </div>
+
+  <div style="text-align:center;margin:60px 0 20px;color:var(--text-muted);font-size:0.8rem;">
+    <div style="margin-bottom:8px;">— End of Document —</div>
+    <div>AugHome IDE Development Blueprint v1.0 · September 2026</div>
+    <div>Prepared by Antigravity AI · Confidential</div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
