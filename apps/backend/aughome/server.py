@@ -55,15 +55,31 @@ except ImportError:
     handle_terminal_ws = None  # type: ignore
 
 try:
-    from completion import CompletionRequest, CompletionService
+    from aughome.completion import CompletionRequest, CompletionService
 except ImportError:
-    CompletionRequest = None  # type: ignore
-    CompletionService = None  # type: ignore
+    try:
+        from completion import CompletionRequest, CompletionService
+    except ImportError:
+        CompletionRequest = None  # type: ignore
+        CompletionService = None  # type: ignore
 
 try:
-    from diff_engine import DiffEngine
+    from aughome.diff_engine import DiffEngine, DiffResult
 except ImportError:
-    DiffEngine = None  # type: ignore
+    try:
+        from diff_engine import DiffEngine, DiffResult
+    except ImportError:
+        DiffEngine = None  # type: ignore
+        DiffResult = None  # type: ignore
+
+try:
+    from aughome.lsp_bridge import LSPBridge, LSPDiagnostic
+except ImportError:
+    try:
+        from lsp_bridge import LSPBridge, LSPDiagnostic
+    except ImportError:
+        LSPBridge = None  # type: ignore
+        LSPDiagnostic = None  # type: ignore
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -88,6 +104,7 @@ app.add_middleware(
 model_router = ModelRouter()
 completion_service = CompletionService(router=model_router) if CompletionService else None
 diff_engine = DiffEngine() if DiffEngine else None
+lsp_bridge = LSPBridge() if LSPBridge else None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -332,8 +349,8 @@ async def complete_endpoint(payload: FIMCompletionRequest) -> Dict[str, Any]:
 
 # Legacy /complete endpoint for backward compatibility
 @app.post("/complete")
-def legacy_complete(payload: FIMCompletionRequest) -> Dict[str, Any]:
-    return complete_endpoint(payload)
+async def legacy_complete(payload: FIMCompletionRequest) -> Dict[str, Any]:
+    return await complete_endpoint(payload)
 
 
 # Legacy /diff endpoint for backward compatibility
@@ -685,3 +702,6 @@ def configure_model(payload: ModelConfigureRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(ke))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+
