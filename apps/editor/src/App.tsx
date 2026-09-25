@@ -1,108 +1,250 @@
-import React, { useState } from 'react';
-import { Editor } from './components/Editor';
+import React, { useRef, useCallback } from 'react';
+import { IDEProvider, useIDE } from './context/IDEContext';
+import { ActivityBar } from './components/ActivityBar';
+import { Sidebar } from './components/Sidebar';
+import { EditorArea } from './components/EditorArea';
 import { ChatPanel } from './components/ChatPanel';
-import { OpenFileTab, ChatMessage } from './types';
+import { TerminalPanel } from './components/TerminalPanel';
+import { StatusBar } from './components/StatusBar';
 
-export const App: React.FC = () => {
-  const [activeFile, setActiveFile] = useState<OpenFileTab | null>({
-    id: '1',
-    path: 'src/index.ts',
-    filename: 'index.ts',
-    content: '// Welcome to AugHome IDE\nconsole.log("Hello, AugHome!");\n',
-    language: 'typescript',
-    isDirty: false,
-  });
+const MainLayout: React.FC = () => {
+  const { state, dispatch } = useIDE();
+  const activeFile = state.openFiles.find((f) => f.id === state.activeFileId);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // Resize handler for Sidebar (Horizontal)
+  const handleSidebarResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startWidth = state.sidebarWidth;
 
-  const handleSendMessage = (text: string) => {
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      timestamp: Date.now(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-
-    // Simulate backend response
-    setTimeout(() => {
-      const assistantMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `Augagent received: "${text}". Ready to assist with coding and code intelligence.`,
-        timestamp: Date.now(),
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const deltaX = moveEvent.clientX - startX;
+        dispatch({ type: 'SET_SIDEBAR_WIDTH', payload: startWidth + deltaX });
       };
-      setMessages((prev) => [...prev, assistantMsg]);
-      setIsLoading(false);
-    }, 600);
-  };
 
-  const handleContentChange = (newContent: string) => {
-    if (activeFile) {
-      setActiveFile({ ...activeFile, content: newContent, isDirty: true });
-    }
-  };
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = 'default';
+      };
+
+      document.body.style.cursor = 'col-resize';
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    },
+    [state.sidebarWidth, dispatch]
+  );
+
+  // Resize handler for AI Chat Panel (Horizontal)
+  const handleChatResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startWidth = state.chatWidth;
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const deltaX = startX - moveEvent.clientX;
+        dispatch({ type: 'SET_CHAT_WIDTH', payload: startWidth + deltaX });
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = 'default';
+      };
+
+      document.body.style.cursor = 'col-resize';
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    },
+    [state.chatWidth, dispatch]
+  );
+
+  // Resize handler for Terminal (Vertical)
+  const handleTerminalResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startY = e.clientY;
+      const startHeight = state.terminalHeight;
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = startY - moveEvent.clientY;
+        dispatch({ type: 'SET_TERMINAL_HEIGHT', payload: startHeight + deltaY });
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        document.body.style.cursor = 'default';
+      };
+
+      document.body.style.cursor = 'row-resize';
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    },
+    [state.terminalHeight, dispatch]
+  );
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: '#0d1117',
-      color: '#c9d1d9',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      overflow: 'hidden',
-    }}>
-      {/* Title bar */}
-      <div style={{
-        height: '38px',
-        backgroundColor: '#161b22',
-        borderBottom: '1px solid #30363d',
+    <div
+      style={{
         display: 'flex',
-        alignItems: 'center',
-        padding: '0 16px',
-        fontSize: '12px',
-        justifyContent: 'space-between',
-      }}>
-        <div style={{ fontWeight: 600, color: '#f0f6fc' }}>AugHome IDE</div>
-        <div>{activeFile ? activeFile.filename : 'No File Opened'}</div>
-        <div style={{ color: '#3fb950' }}>● Augagent Connected</div>
-      </div>
-
-      {/* Main Workspace Layout */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Editor Area */}
-        <div style={{ flex: 1, height: '100%' }}>
-          <Editor activeFile={activeFile} onChangeContent={handleContentChange} />
+        flexDirection: 'column',
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#1e1e1e',
+        color: '#cccccc',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        overflow: 'hidden',
+        userSelect: 'none',
+      }}
+      data-testid="ide-container"
+    >
+      {/* Top Application Bar / Window Header */}
+      <div
+        style={{
+          height: '35px',
+          minHeight: '35px',
+          backgroundColor: '#181818',
+          borderBottom: '1px solid #282828',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 14px',
+          fontSize: '12px',
+        }}
+        data-testid="top-titlebar"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '15px', color: '#58a6ff' }}>⚡</span>
+            <span style={{ fontWeight: 700, color: '#ffffff' }}>AugHome</span>
+          </div>
+          {/* Quick Menu items */}
+          <div style={{ display: 'flex', gap: '12px', color: '#999999', fontSize: '12px' }}>
+            <span style={{ cursor: 'pointer' }}>File</span>
+            <span style={{ cursor: 'pointer' }}>Edit</span>
+            <span style={{ cursor: 'pointer' }}>Selection</span>
+            <span style={{ cursor: 'pointer' }}>View</span>
+            <span style={{ cursor: 'pointer' }}>Terminal</span>
+            <span style={{ cursor: 'pointer' }}>Help</span>
+          </div>
         </div>
 
-        {/* AI Chat Sidecar Panel */}
-        <ChatPanel
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading}
-        />
+        {/* Center Title Display */}
+        <div
+          style={{
+            color: '#8b949e',
+            fontSize: '12px',
+            backgroundColor: '#252526',
+            padding: '3px 20px',
+            borderRadius: '4px',
+            border: '1px solid #333333',
+            minWidth: '220px',
+            textAlign: 'center',
+          }}
+        >
+          {activeFile ? `${activeFile.filename} — AugHome IDE` : 'AugHome IDE — Workspace'}
+        </div>
+
+        {/* Right Status Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ color: '#3fb950', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>●</span> Augagent Connected
+          </span>
+        </div>
       </div>
 
-      {/* Status Bar */}
-      <div style={{
-        height: '24px',
-        backgroundColor: '#090d13',
-        borderTop: '1px solid #30363d',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 12px',
-        fontSize: '11px',
-        color: '#8b949e',
-        gap: '16px',
-      }}>
-        <span>UTF-8</span>
-        <span>TypeScript</span>
-        <span>Tier 1: Gemini 2.5 Flash (Default)</span>
+      {/* Main Workspace Panels Layout */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+        {/* Activity Bar (48px fixed) */}
+        <ActivityBar />
+
+        {/* Sidebar (Resizable, 250px default) */}
+        <Sidebar />
+
+        {/* Sidebar Drag Handle */}
+        {state.isSidebarOpen && (
+          <div
+            onMouseDown={handleSidebarResize}
+            style={{
+              width: '4px',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              transition: 'background-color 0.15s ease',
+              zIndex: 10,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#007acc')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          />
+        )}
+
+        {/* Center Area: Editor + Terminal */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            height: '100%',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Editor Area (Monaco + Tabs + Breadcrumbs) */}
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <EditorArea />
+          </div>
+
+          {/* Terminal Drag Handle */}
+          {state.isTerminalOpen && (
+            <div
+              onMouseDown={handleTerminalResize}
+              style={{
+                height: '4px',
+                cursor: 'row-resize',
+                backgroundColor: 'transparent',
+                transition: 'background-color 0.15s ease',
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#007acc')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            />
+          )}
+
+          {/* Terminal Panel (Bottom PTY) */}
+          <TerminalPanel />
+        </div>
+
+        {/* Chat Drag Handle */}
+        {state.isChatOpen && (
+          <div
+            onMouseDown={handleChatResize}
+            style={{
+              width: '4px',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              transition: 'background-color 0.15s ease',
+              zIndex: 10,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#007acc')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          />
+        )}
+
+        {/* AI Chat Sidecar Panel (Right, 350px default) */}
+        <ChatPanel />
       </div>
+
+      {/* Status Bar (22px fixed) */}
+      <StatusBar />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <IDEProvider>
+      <MainLayout />
+    </IDEProvider>
   );
 };
