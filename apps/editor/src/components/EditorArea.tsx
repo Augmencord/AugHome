@@ -1,14 +1,39 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { useIDE } from '../context/IDEContext';
 import { InlineCompletionManager } from '../services/inlineCompletion';
+import { LSPService } from '../services/lspService';
 
 export const EditorArea: React.FC = () => {
   const { state, dispatch } = useIDE();
   const activeFile = state.openFiles.find((f) => f.id === state.activeFileId) || null;
   const inlineManagerRef = useRef<InlineCompletionManager>(new InlineCompletionManager());
+  const lspServiceRef = useRef<LSPService>(new LSPService());
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (monacoRef.current && editorRef.current && activeFile) {
+      lspServiceRef.current.updateDiagnostics(
+        monacoRef.current,
+        editorRef.current.getModel(),
+        activeFile.path,
+        activeFile.language
+      );
+    }
+  }, [activeFile?.id]);
+
+  useEffect(() => {
+    return () => {
+      lspServiceRef.current.dispose();
+      inlineManagerRef.current.cancelInFlight();
+    };
+  }, []);
 
   const handleEditorMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+
     // Register cursor position change listener
     editor.onDidChangeCursorPosition((e) => {
       dispatch({
@@ -27,6 +52,21 @@ export const EditorArea: React.FC = () => {
       () => activeFile,
       () => state.selectedModel
     );
+
+    // Register LSP Language Features (Hover tooltips, Ctrl+Click definitions, Ctrl+Space autocomplete)
+    lspServiceRef.current.registerHoverProvider(monaco);
+    lspServiceRef.current.registerDefinitionProvider(monaco);
+    lspServiceRef.current.registerCompletionProvider(monaco);
+
+    // Trigger initial diagnostics for active file
+    if (activeFile) {
+      lspServiceRef.current.updateDiagnostics(
+        monaco,
+        editor.getModel(),
+        activeFile.path,
+        activeFile.language
+      );
+    }
   };
 
   const handleContentChange = (value: string | undefined) => {
@@ -38,6 +78,16 @@ export const EditorArea: React.FC = () => {
           content: value,
         },
       });
+
+      // Update LSP diagnostics on content change (debounced)
+      if (monacoRef.current && editorRef.current) {
+        lspServiceRef.current.scheduleDiagnosticsUpdate(
+          monacoRef.current,
+          editorRef.current.getModel(),
+          activeFile.path,
+          activeFile.language
+        );
+      }
     }
   };
 

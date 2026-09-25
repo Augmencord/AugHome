@@ -168,6 +168,46 @@ class DiffRequestPayload(BaseModel):
     filename: str = "buffer.txt"
 
 
+class LSPDiagnosticsRequest(BaseModel):
+    file_path: str
+    content: Optional[str] = None
+    language_id: Optional[str] = "python"
+
+
+class LSPHoverRequest(BaseModel):
+    file_path: str
+    line: int
+    column: int
+    content: Optional[str] = None
+    language_id: Optional[str] = "python"
+
+
+class LSPDefinitionRequest(BaseModel):
+    file_path: str
+    line: int
+    column: int
+    content: Optional[str] = None
+    language_id: Optional[str] = "python"
+
+
+class LSPCompletionRequest(BaseModel):
+    file_path: str
+    line: int
+    column: int
+    content: Optional[str] = None
+    language_id: Optional[str] = "python"
+
+
+class LSPRenameRequest(BaseModel):
+    file_path: str
+    line: int
+    column: int
+    new_name: str
+    content: Optional[str] = None
+    language_id: Optional[str] = "python"
+
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Health & Status
 # ═══════════════════════════════════════════════════════════════════════════
@@ -201,7 +241,21 @@ async def chat_endpoint(request: ChatRequest):
         await asyncio.sleep(0.01)
 
         # Generate contextual streaming tokens
-        if "test" in latest_msg.lower():
+        if any(term in latest_msg.lower() for term in ["fix error", "fix errors", "diagnostic", "diagnostics"]):
+            diag_summary = lsp_bridge.get_cached_diagnostics_summary() if lsp_bridge else ""
+            if diag_summary:
+                context_prefix = f"I retrieved the active LSP diagnostics for your file:\n\n```text\n{diag_summary}\n```\n\nHere is the proposed fix:\n\n"
+            else:
+                context_prefix = "I checked LSP diagnostics for the active file. No syntax or compiler errors were detected.\n\n"
+            response_chunks = [
+                context_prefix,
+                "```python\n",
+                "# Verified code fix\n",
+                "def solve_issue():\n",
+                "    return True\n",
+                "```\n",
+            ]
+        elif "test" in latest_msg.lower():
             response_chunks = [
                 "I ", "can ", "help ", "you ", "generate ", "unit ", "tests ",
                 "for ", "this ", "module.\n\n",
@@ -693,6 +747,113 @@ def configure_model(payload: ModelConfigureRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(ke))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 8. Language Server Protocol (LSP) APIs
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.post("/v1/lsp/diagnostics")
+def lsp_diagnostics(payload: LSPDiagnosticsRequest) -> Dict[str, Any]:
+    """Retrieve diagnostics and syntax errors for a document."""
+    try:
+        if not lsp_bridge:
+            raise HTTPException(status_code=500, detail="LSP bridge is not initialized.")
+        diags = lsp_bridge.get_diagnostics(
+            file_path=payload.file_path,
+            content=payload.content,
+            language_id=payload.language_id or "python",
+        )
+        return {
+            "file_path": payload.file_path,
+            "diagnostics": [asdict(d) for d in diags],
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/v1/lsp/hover")
+def lsp_hover(payload: LSPHoverRequest) -> Dict[str, Any]:
+    """Retrieve hover documentation and type signatures for a symbol."""
+    try:
+        if not lsp_bridge:
+            raise HTTPException(status_code=500, detail="LSP bridge is not initialized.")
+        result = lsp_bridge.get_hover(
+            file_path=payload.file_path,
+            line=payload.line,
+            column=payload.column,
+            content=payload.content,
+            language_id=payload.language_id or "python",
+        )
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/v1/lsp/definition")
+def lsp_definition(payload: LSPDefinitionRequest) -> Dict[str, Any]:
+    """Retrieve definition source locations for a symbol under cursor."""
+    try:
+        if not lsp_bridge:
+            raise HTTPException(status_code=500, detail="LSP bridge is not initialized.")
+        locations = lsp_bridge.get_definition(
+            file_path=payload.file_path,
+            line=payload.line,
+            column=payload.column,
+            content=payload.content,
+            language_id=payload.language_id or "python",
+        )
+        return {"locations": locations}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/v1/lsp/completion")
+def lsp_completion(payload: LSPCompletionRequest) -> Dict[str, Any]:
+    """Retrieve contextual code completion items."""
+    try:
+        if not lsp_bridge:
+            raise HTTPException(status_code=500, detail="LSP bridge is not initialized.")
+        items = lsp_bridge.get_completion(
+            file_path=payload.file_path,
+            line=payload.line,
+            column=payload.column,
+            content=payload.content,
+            language_id=payload.language_id or "python",
+        )
+        return {"items": items}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/v1/lsp/rename")
+def lsp_rename(payload: LSPRenameRequest) -> Dict[str, Any]:
+    """Perform symbol rename across the document."""
+    try:
+        if not lsp_bridge:
+            raise HTTPException(status_code=500, detail="LSP bridge is not initialized.")
+        edits = lsp_bridge.rename_symbol(
+            file_path=payload.file_path,
+            line=payload.line,
+            column=payload.column,
+            new_name=payload.new_name,
+            content=payload.content,
+            language_id=payload.language_id or "python",
+        )
+        return edits
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
 
 
 
