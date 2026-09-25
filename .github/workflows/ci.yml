@@ -27,7 +27,7 @@ jobs:
 
       - name: Run Workspace Tests
         run: |
-          node --test tests/**/*.test.js
+          node --test tests/workspace.test.js
 
       - name: Run Backend Unit Tests
         run: |
