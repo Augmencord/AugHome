@@ -208,14 +208,14 @@ class LSPBridge:
         "go": ["gopls"],
     }
 
-    def __init__(self, workspace_root: Optional[str] = None) -> None:
+    def __init__(self, workspace_root: Optional[str] = None, auto_detect: bool = False) -> None:
         self.workspace_root = workspace_root or os.getcwd()
         self._active_servers: Dict[str, str] = {}
         self._running_processes: Dict[str, LSPProcess] = {}
         self._diagnostics_cache: Dict[str, List[LSPDiagnostic]] = {}
 
-        # Run automatic language server detection
-        self.auto_detect_servers()
+        if auto_detect:
+            self.auto_detect_servers()
 
     def auto_detect_servers(self) -> Dict[str, str]:
         """Scan PATH for available language servers and register them."""

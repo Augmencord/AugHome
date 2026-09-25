@@ -95,7 +95,7 @@ app.add_middleware(
 model_router = ModelRouter()
 completion_service = CompletionService(router=model_router) if CompletionService else None
 diff_engine = DiffEngine() if DiffEngine else None
-lsp_bridge = LSPBridge() if LSPBridge else None
+lsp_bridge = LSPBridge(auto_detect=True) if LSPBridge else None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
