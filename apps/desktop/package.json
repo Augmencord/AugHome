@@ -1,23 +1,33 @@
 {
   "name": "@aughome/desktop",
   "version": "0.1.0",
-  "description": "AugHome IDE Electron Main Process",
-  "main": "dist/main.js",
+  "private": true,
+  "description": "AugHome IDE Electron Desktop Shell",
+  "main": "dist/main/main.js",
+  "type": "module",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "start": "electron dist/main.js"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "package:win": "electron-builder --win nsis",
+    "package:mac": "electron-builder --mac dmg",
+    "package:linux": "electron-builder --linux AppImage",
+    "package:all": "electron-builder -wml"
   },
   "keywords": [
     "electron",
     "ide",
-    "aughome"
+    "aughome",
+    "augagent"
   ],
   "author": "Augmencord",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
     "electron": "^30.0.0",
-    "typescript": "^5.4.0"
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.4.0",
+    "vite": "^5.2.0",
+    "vite-plugin-electron": "^0.28.6",
+    "vite-plugin-electron-renderer": "^0.14.5"
   }
 }

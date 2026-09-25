@@ -9,7 +9,8 @@
     "extensions/*"
   ],
   "scripts": {
-    "test": "node --test tests/workspace.test.js",
+    "dev": "npm --workspace=@aughome/desktop run dev",
+    "test": "node --test tests/*.test.js",
     "test:backend": "py -m unittest discover -s apps/backend/tests",
     "lint": "echo \"Linting workspace...\"",
     "build": "echo \"Building workspace packages...\""

@@ -3,89 +3,61 @@
  *
  * Responsibilities:
  * - Application lifecycle management
- * - BrowserWindow creation with secure contextIsolation
- * - Spawning and supervising backend Python/FastAPI service
- * - Inter-Process Communication (IPC) handling
+ * - Frameless BrowserWindow creation (1400x900) with custom titlebar
+ * - Preload with secure contextBridge
+ * - Auto-spawning Python backend service with health monitoring & graceful shutdown
+ * - Handling window control & backend IPC channels
  */
 
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
-import { spawn, ChildProcess } from 'child_process';
+import { fileURLToPath } from 'url';
+import { BackendProcessManager } from './backend-manager.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
-let backendProcess: ChildProcess | null = null;
-
-const BACKEND_PORT = process.env.AUGHOME_BACKEND_PORT || '8000';
-
-function startBackendService(): void {
-  const isDev = process.env.NODE_ENV !== 'production';
-  const pythonCmd = process.platform === 'win32' ? 'py' : 'python3';
-  const backendScript = path.resolve(__dirname, '../../backend/server.py');
-
-  try {
-    backendProcess = spawn(pythonCmd, [backendScript], {
-      env: {
-        ...process.env,
-        AUGHOME_PORT: BACKEND_PORT,
-      },
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    backendProcess.stdout?.on('data', (data) => {
-      console.log(`[AugHome Backend]: ${data}`);
-    });
-
-    backendProcess.stderr?.on('data', (data) => {
-      console.error(`[AugHome Backend Error]: ${data}`);
-    });
-
-    backendProcess.on('close', (code) => {
-      console.log(`[AugHome Backend] exited with code ${code}`);
-    });
-  } catch (err) {
-    console.error('Failed to spawn backend process:', err);
-  }
-}
-
-function stopBackendService(): void {
-  if (backendProcess && !backendProcess.killed) {
-    backendProcess.kill();
-    backendProcess = null;
-  }
-}
+const backendManager = new BackendProcessManager();
 
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1440,
+    width: 1400,
     height: 900,
     minWidth: 1024,
     minHeight: 640,
-    title: 'AugHome IDE',
+    frame: false,
+    titleBarStyle: 'hidden',
+    backgroundColor: '#0d1117',
+    show: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.resolve(__dirname, '../preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
     },
-    backgroundColor: '#0d1117',
-    show: false,
   });
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
   });
 
-  const devUrl = 'http://localhost:5173';
-  if (process.env.NODE_ENV !== 'production') {
-    mainWindow.loadURL(devUrl).catch(() => {
-      // Fallback if local dev server is not active
-      mainWindow?.loadFile(path.join(__dirname, '../renderer/index.html')).catch((err) => {
-        console.error('Failed to load fallback index.html', err);
-      });
+  // Relay backend status changes to renderer
+  backendManager.on('status', (status) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('backend:status-changed', status);
+    }
+  });
+
+  // Load URL or local index.html
+  if (process.env.VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL).catch((err) => {
+      console.error('[Main] Failed to load dev server URL:', err);
     });
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html')).catch((err) => {
-      console.error('Failed to load production index.html', err);
+    const indexPath = path.resolve(__dirname, '../../index.html');
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('[Main] Failed to load index.html:', err);
     });
   }
 
@@ -94,9 +66,53 @@ function createMainWindow(): void {
   });
 }
 
-// App lifecycle
+// ═══════════════════════════════════════════════════════════════════════════
+// IPC Handlers: Window Controls
+// ═══════════════════════════════════════════════════════════════════════════
+
+ipcMain.handle('window:minimize', () => {
+  mainWindow?.minimize();
+});
+
+ipcMain.handle('window:maximize', () => {
+  if (!mainWindow) return false;
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+    return false;
+  } else {
+    mainWindow.maximize();
+    return true;
+  }
+});
+
+ipcMain.handle('window:close', () => {
+  mainWindow?.close();
+});
+
+ipcMain.handle('window:is-maximized', () => {
+  return mainWindow?.isMaximized() ?? false;
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IPC Handlers: Backend Supervision
+// ═══════════════════════════════════════════════════════════════════════════
+
+ipcMain.handle('backend:get-status', () => {
+  return backendManager.getStatus();
+});
+
+ipcMain.handle('backend:restart', async () => {
+  await backendManager.stop();
+  backendManager.start();
+  return backendManager.getStatus();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// App Lifecycle
+// ═══════════════════════════════════════════════════════════════════════════
+
 app.whenReady().then(() => {
-  startBackendService();
+  backendManager.start();
   createMainWindow();
 
   app.on('activate', () => {
@@ -112,14 +128,16 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('will-quit', () => {
-  stopBackendService();
-});
-
-// IPC Communications
-ipcMain.handle('ide:get-backend-status', async () => {
-  return {
-    running: backendProcess !== null && !backendProcess.killed,
-    port: BACKEND_PORT,
-  };
+let isQuitting = false;
+app.on('before-quit', async (event) => {
+  if (!isQuitting) {
+    isQuitting = true;
+    event.preventDefault();
+    try {
+      await backendManager.stop();
+    } catch (err) {
+      console.error('[Main] Error stopping backend:', err);
+    }
+    app.quit();
+  }
 });
