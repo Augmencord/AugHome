@@ -85,8 +85,13 @@ class JSONRPCMessage:
 class LSPProcess:
     """Manages an active stdio language server subprocess."""
 
-    def __init__(self, command: str, root_uri: str) -> None:
-        self.command = command
+    def __init__(
+        self,
+        command: str = "",
+        root_uri: str = "",
+        server_cmd: Optional[str] = None,
+    ) -> None:
+        self.command = server_cmd or command
         self.root_uri = root_uri
         self.process: Optional[subprocess.Popen] = None
         self._req_id = 0
@@ -160,6 +165,9 @@ class LSPProcess:
 
     def initialize(self) -> Dict[str, Any]:
         """Perform the standard LSP initialize handshake."""
+        if not self.process:
+            if not self.start():
+                return {}
         params = {
             "processId": os.getpid(),
             "rootUri": self.root_uri,
@@ -252,7 +260,7 @@ class LSPBridge:
             return None
         try:
             root_uri = f"file:///{self.workspace_root.replace(os.sep, '/')}"
-            proc = LSPProcess(server_cmd=cmd, root_uri=root_uri)
+            proc = LSPProcess(command=cmd, root_uri=root_uri)
             self._running_processes[language_id] = proc
             return proc
         except Exception:
