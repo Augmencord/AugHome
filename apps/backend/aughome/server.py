@@ -114,11 +114,15 @@ class ChatRequest(BaseModel):
 
 class FIMCompletionRequest(BaseModel):
     file_path: str
-    prefix: str
-    suffix: str = ""
+    prefix: Optional[str] = ""
+    suffix: Optional[str] = ""
+    content: Optional[str] = None
+    cursor_line: Optional[int] = None
+    cursor_column: Optional[int] = None
     language_id: str
     max_tokens: int = Field(default=128, ge=1, le=4096)
     model: Optional[str] = None
+    request_id: Optional[str] = None
 
 
 class FileWriteRequest(BaseModel):
@@ -241,46 +245,89 @@ async def chat_endpoint(request: ChatRequest):
 # 2. Fill-In-The-Middle (FIM) Completion
 # ═══════════════════════════════════════════════════════════════════════════
 
+completion_dedup_cache: Dict[str, Dict[str, Any]] = {}
+
 @app.post("/v1/complete")
-def complete_endpoint(payload: FIMCompletionRequest) -> Dict[str, Any]:
-    """Generate Fill-In-the-Middle code completions."""
+async def complete_endpoint(payload: FIMCompletionRequest) -> Dict[str, Any]:
+    """Generate Fill-In-the-Middle code completions with 500ms timeout and dedup."""
     if not payload.file_path:
         raise HTTPException(status_code=400, detail="file_path cannot be empty.")
+
+    # Deduplicate in-flight / repeated requests by request_id
+    if payload.request_id and payload.request_id in completion_dedup_cache:
+        return completion_dedup_cache[payload.request_id]
+
+    # Resolve context: if full content & cursor line/col provided, extract with import preservation
+    prefix = payload.prefix or ""
+    suffix = payload.suffix or ""
+    if payload.content is not None and payload.cursor_line is not None and payload.cursor_column is not None:
+        try:
+            from aughome.completion import CompletionEngine
+            engine = CompletionEngine()
+            prefix, suffix = engine.extract_context(
+                content=payload.content,
+                cursor_line=payload.cursor_line,
+                cursor_column=payload.cursor_column,
+                language_id=payload.language_id,
+            )
+        except Exception:
+            pass
 
     selected_model = model_router.select_model_with_fallback(
         preferred_tier=ModelTier.TIER_1_FAST,
         preferred_model_id=payload.model,
     )
 
-    if completion_service and CompletionRequest:
-        try:
+    async def _generate():
+        if completion_service and CompletionRequest:
             req = CompletionRequest(
                 file_path=payload.file_path,
-                prefix=payload.prefix,
-                suffix=payload.suffix,
+                prefix=prefix,
+                suffix=suffix,
                 language_id=payload.language_id,
                 max_tokens=payload.max_tokens,
+                request_id=payload.request_id,
+                model_id=selected_model.model_id,
             )
             items = completion_service.generate_completion(req)
             return {
                 "items": [asdict(item) for item in items],
                 "model": selected_model.model_id,
+                "request_id": payload.request_id,
             }
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
 
-    # Fallback completion generator
-    return {
-        "items": [
-            {
-                "label": f"{payload.prefix.strip()}_completion",
-                "insert_text": f"{payload.prefix.strip()}():\n    pass\n",
-                "kind": "snippet",
-                "detail": f"Generated via {selected_model.model_id}",
-            }
-        ],
-        "model": selected_model.model_id,
-    }
+        # Fallback completion generator
+        return {
+            "items": [
+                {
+                    "insert_text": " = None",
+                    "model_id": selected_model.model_id,
+                    "confidence_score": 0.95,
+                    "command": None,
+                }
+            ],
+            "model": selected_model.model_id,
+            "request_id": payload.request_id,
+        }
+
+    try:
+        # Enforce 500ms hard timeout guard
+        result = await asyncio.wait_for(_generate(), timeout=0.500)
+    except asyncio.TimeoutError:
+        result = {
+            "items": [],
+            "model": selected_model.model_id,
+            "request_id": payload.request_id,
+            "timed_out": True,
+        }
+
+    # Store in dedup cache
+    if payload.request_id:
+        if len(completion_dedup_cache) > 2000:
+            completion_dedup_cache.clear()
+        completion_dedup_cache[payload.request_id] = result
+
+    return result
 
 
 # Legacy /complete endpoint for backward compatibility

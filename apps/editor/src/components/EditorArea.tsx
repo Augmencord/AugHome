@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { useIDE } from '../context/IDEContext';
+import { InlineCompletionManager } from '../services/inlineCompletion';
 
 export const EditorArea: React.FC = () => {
   const { state, dispatch } = useIDE();
   const activeFile = state.openFiles.find((f) => f.id === state.activeFileId) || null;
+  const inlineManagerRef = useRef<InlineCompletionManager>(new InlineCompletionManager());
 
-  const handleEditorMount: OnMount = (editor) => {
+  const handleEditorMount: OnMount = (editor, monaco) => {
+    // Register cursor position change listener
     editor.onDidChangeCursorPosition((e) => {
       dispatch({
         type: 'SET_CURSOR_POSITION',
@@ -16,6 +19,14 @@ export const EditorArea: React.FC = () => {
         },
       });
     });
+
+    // Register Inline Completion Provider with 300ms debounce and in-flight cancel
+    inlineManagerRef.current.register(
+      monaco,
+      editor,
+      () => activeFile,
+      () => state.selectedModel
+    );
   };
 
   const handleContentChange = (value: string | undefined) => {
@@ -180,6 +191,13 @@ export const EditorArea: React.FC = () => {
               smoothScrolling: true,
               wordWrap: 'on',
               padding: { top: 8, bottom: 8 },
+              inlineSuggest: {
+                enabled: true,
+                mode: 'subwordSmart',
+              },
+              suggest: {
+                preview: true,
+              },
             }}
             onChange={handleContentChange}
             onMount={handleEditorMount}
